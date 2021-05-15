@@ -1,0 +1,24 @@
+{
+  "name": "rmps",
+  "version": "1.0.0",
+  "description": "🧅 Modular and extendable particle system for Three.js",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Robert May",
+  "license": "MIT",
+  "dependencies": {
+    "nanoid": "^3.1.23",
+    "three": "^0.128.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.128.0",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "typescript": "^4.2.4"
+  }
+}
