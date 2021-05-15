@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const THREE = require("three");
 class SpriteRenderer {
-    constructor(texture) {
+    constructor(texture = '../assets/images/simple.jpeg') {
         this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
         this.geometry = new THREE.BufferGeometry();
         this.material = new THREE.PointsMaterial({

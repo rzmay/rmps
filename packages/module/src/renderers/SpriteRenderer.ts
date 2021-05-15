@@ -12,7 +12,7 @@ class SpriteRenderer implements Renderer {
 
     private points: THREE.Points;
 
-    constructor(texture: string | THREE.Texture) {
+    constructor(texture: string | THREE.Texture = '../assets/images/simple.jpeg') {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
       this.geometry = new THREE.BufferGeometry();
       this.material = new THREE.PointsMaterial({

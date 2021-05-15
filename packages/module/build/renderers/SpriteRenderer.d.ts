@@ -7,7 +7,7 @@ declare class SpriteRenderer implements Renderer {
     private geometry;
     private material;
     private points;
-    constructor(texture: string | THREE.Texture);
+    constructor(texture?: string | THREE.Texture);
     setup(system: ParticleSystem): void;
     update(particles: Particle[]): void;
 }

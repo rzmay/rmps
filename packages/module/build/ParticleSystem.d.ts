@@ -10,7 +10,7 @@ declare class ParticleSystem extends THREE.Object3D {
     renderers: Renderer[];
     private deltaTime;
     private lastFrame;
-    constructor(emitter: Emitter | Emitter[], renderer: Renderer | Renderer[], modules: Module | Module[]);
+    constructor(emitter?: Emitter | Emitter[], renderer?: Renderer | Renderer[], modules?: Module | Module[]);
     private calculateDeltaTime;
     update(): void;
 }

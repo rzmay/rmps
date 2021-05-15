@@ -46,7 +46,7 @@ class Particle {
       this.color = color;
       this.alpha = alpha;
 
-      this.startTime = new Date().getTime() / 1000;
+      this.startTime = Date.now();
       this.lifetime = lifetime;
 
       this.id = nanoid();

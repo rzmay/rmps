@@ -9,7 +9,7 @@ function ParticleSystemDisplay() {
   const { scene } = useThree();
 
   useEffect(() => {
-    particleSystem.current = new ParticleSystem([], new SpriteRenderer(), []);
+    particleSystem.current = new ParticleSystem();
     scene.add(particleSystem.current);
     console.log(particleSystem.current);
   }, [scene]);

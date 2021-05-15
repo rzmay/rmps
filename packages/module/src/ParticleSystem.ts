@@ -4,6 +4,7 @@ import Emitter from './Emitter';
 import Module from './Module';
 import Renderer from './interfaces/Renderer';
 import { acceptMultiple } from './helpers/acceptMultiple';
+import SpriteRenderer from './renderers/SpriteRenderer';
 
 class ParticleSystem extends THREE.Object3D {
     particles: Particle[] = [];
@@ -19,9 +20,9 @@ class ParticleSystem extends THREE.Object3D {
     private lastFrame: number;
 
     constructor(
-      emitter: Emitter | Emitter[],
-      renderer: Renderer | Renderer[],
-      modules: Module | Module[],
+      emitter: Emitter | Emitter[] = new Emitter(),
+      renderer: Renderer | Renderer[] = new SpriteRenderer(),
+      modules: Module | Module[] = [],
     ) {
       super();
 
@@ -29,7 +30,7 @@ class ParticleSystem extends THREE.Object3D {
       this.renderers = acceptMultiple(renderer);
       this.modules = acceptMultiple(modules);
 
-      this.lastFrame = new Date().getTime();
+      this.lastFrame = Date.now();
 
       this.renderers.forEach((r) => {
         r.setup(this);
@@ -47,15 +48,24 @@ class ParticleSystem extends THREE.Object3D {
     }
 
     private calculateDeltaTime() {
-      this.deltaTime = (new Date().getTime() - this.lastFrame) / 1000;
-      this.lastFrame = (new Date().getTime());
+      this.deltaTime = (Date.now() - this.lastFrame) / 1000;
+      this.lastFrame = (Date.now());
     }
 
     update(): void {
       this.calculateDeltaTime();
 
-      this.particles.forEach((particle) => {
+      this.emitters.forEach((emitter) => {
+        emitter.update(this.particles);
+      });
+
+      this.particles.forEach((particle, index) => {
         particle.update(this.deltaTime);
+
+        if (Date.now() - particle.startTime > particle.lifetime * 1000) {
+          console.log('BRUH!!');
+          this.particles.splice(index, 1);
+        }
       });
 
       this.renderers.forEach((renderer) => {
