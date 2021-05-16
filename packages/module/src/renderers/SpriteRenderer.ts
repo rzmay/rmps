@@ -12,12 +12,16 @@ class SpriteRenderer implements Renderer {
 
     private points: THREE.Points;
 
-    constructor(texture: string | THREE.Texture = '../assets/images/simple.jpeg') {
+    constructor(texture: string | THREE.Texture = '../assets/images/snowflake.png') {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
-      console.log(this.texture);
       this.geometry = new THREE.BufferGeometry();
       this.material = new THREE.PointsMaterial({
         map: this.texture,
+        color: new THREE.Color(0xff0000),
+        size: 1,
+        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        transparent: true,
       });
 
       this.points = new THREE.Points(this.geometry, this.material);

@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const THREE = require("three");
-const Particle_1 = require("./Particle");
 const Emitter_1 = require("./Emitter");
 const acceptMultiple_1 = require("./helpers/acceptMultiple");
 const SpriteRenderer_1 = require("./renderers/SpriteRenderer");
@@ -19,13 +18,6 @@ class ParticleSystem extends THREE.Object3D {
         this.lastFrame = Date.now();
         this.renderers.forEach((r) => {
             r.setup(this);
-        });
-        // TEMPORARY
-        this.particles = new Array(10).fill(0).map((_, index) => {
-            const particle = new Particle_1.default(new THREE.Vector3(index, 0, 0));
-            particle.velocity = new THREE.Vector3(0, index, 0);
-            particle.acceleration = new THREE.Vector3(0, -9.8, 0);
-            return particle;
         });
     }
     calculateDeltaTime() {
