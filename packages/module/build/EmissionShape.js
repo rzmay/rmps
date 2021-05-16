@@ -37,8 +37,8 @@ class EmissionShape {
         // Get the closest vertices
         const { vertices } = this;
         const closest = vertices
-            .sort((a, b) => Math.abs(point.distanceTo(b)) - Math.abs(point.distanceTo(a)))
-            .splice(maxVertices);
+            .sort((a, b) => Math.abs(point.distanceTo(a)) - Math.abs(point.distanceTo(b)))
+            .splice(0, maxVertices);
         // Get weighted average
         const sumVectors = (vectors) => vectors.reduce((a, b) => a.addScaledVector(b, 1));
         const sumArray = (values) => values.reduce((a, b) => a + b);

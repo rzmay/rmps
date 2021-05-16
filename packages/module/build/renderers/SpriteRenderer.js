@@ -4,6 +4,7 @@ const THREE = require("three");
 class SpriteRenderer {
     constructor(texture = '../assets/images/simple.jpeg') {
         this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
+        console.log(this.texture);
         this.geometry = new THREE.BufferGeometry();
         this.material = new THREE.PointsMaterial({
             map: this.texture,

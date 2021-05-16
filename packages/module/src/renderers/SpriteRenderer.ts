@@ -14,6 +14,7 @@ class SpriteRenderer implements Renderer {
 
     constructor(texture: string | THREE.Texture = '../assets/images/simple.jpeg') {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
+      console.log(this.texture);
       this.geometry = new THREE.BufferGeometry();
       this.material = new THREE.PointsMaterial({
         map: this.texture,

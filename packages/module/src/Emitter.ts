@@ -26,7 +26,7 @@ class Emitter {
 
     constructor(
       initialValues: Partial<InitialParticleValues> = {},
-      source: EmissionShape = EmissionShape.Box,
+      source: EmissionShape = EmissionShape.Sphere,
       bursts: SpawnBurst[] = [],
       rate = 10,
       duration = 5,

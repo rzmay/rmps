@@ -10,6 +10,7 @@ function ParticleSystemDisplay() {
 
   useEffect(() => {
     particleSystem.current = new ParticleSystem();
+    particleSystem.current.position.set(0, 1, 0);
     scene.add(particleSystem.current);
     console.log(particleSystem.current);
   }, [scene]);
