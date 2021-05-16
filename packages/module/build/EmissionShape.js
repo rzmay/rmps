@@ -9,22 +9,21 @@ class EmissionShape {
         this._raycaster = new THREE.Raycaster();
         this._geometry = geometry;
         this.source = source;
-        this._mesh = new THREE.Mesh(this._geometry);
-        this._surfaceSampler = new MeshSurfaceSampler_1.MeshSurfaceSampler(new THREE.Mesh(this._geometry))
+        this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
+        this._surfaceSampler = new MeshSurfaceSampler_1.MeshSurfaceSampler(this._mesh)
             .build();
         this.computeVertexNormals();
         this._geometry.computeBoundingBox();
     }
     set geometry(value) {
         this._geometry = value;
-        this._mesh = new THREE.Mesh(this._geometry);
+        this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
         this._surfaceSampler = new MeshSurfaceSampler_1.MeshSurfaceSampler(this._mesh);
-        this._geometry.computeVertexNormals();
+        this.computeVertexNormals();
         this._geometry.computeBoundingBox();
+        this._mesh.updateMatrix();
     }
-    get mesh() {
-        return this._mesh;
-    }
+    get geometry() { return this._geometry; }
     get vertices() {
         const vertices = this._geometry.getAttribute('position');
         const res = [];
@@ -38,14 +37,13 @@ class EmissionShape {
         // Get the closest vertices
         const { vertices } = this;
         const closest = vertices
-            .map((_, index) => index)
-            .sort((a, b) => point.distanceTo(vertices[a]) - point.distanceTo(vertices[b]))
+            .sort((a, b) => Math.abs(point.distanceTo(b)) - Math.abs(point.distanceTo(a)))
             .splice(maxVertices);
         // Get weighted average
         const sumVectors = (vectors) => vectors.reduce((a, b) => a.addScaledVector(b, 1));
         const sumArray = (values) => values.reduce((a, b) => a + b);
         const weightedMean = (factorsArray, weightsArray) => sumVectors(factorsArray.map((factor, index) => factor.multiplyScalar(weightsArray[index]))).divideScalar(sumArray(weightsArray));
-        return weightedMean(this._vertexNormals.filter((n, i) => closest.includes(i)), closest.map((i) => point.distanceTo(vertices[i])));
+        return weightedMean(closest, closest.map((vector) => Math.abs(point.distanceTo(vector))));
     }
     computeVertexNormals() {
         this._geometry.computeVertexNormals();
@@ -56,8 +54,8 @@ class EmissionShape {
         }
         this._vertexNormals = res;
     }
-    getPoint() {
-        switch (this.source) {
+    getPoint(overrideSource) {
+        switch (overrideSource !== null && overrideSource !== void 0 ? overrideSource : this.source) {
             case EmissionSource_1.EmissionSource.Vertices: // Select random vertex
                 const { vertices } = this;
                 const vertexIndex = Math.floor(Math.random() * vertices.length);
@@ -73,17 +71,27 @@ class EmissionShape {
             default: // Choose random points in bounding box until one is contained by geometry (volume)
                 const { min, max } = this._geometry.boundingBox;
                 const randomPoint = new THREE.Vector3(THREE.MathUtils.lerp(min.x, max.x, Math.random()), THREE.MathUtils.lerp(min.y, max.y, Math.random()), THREE.MathUtils.lerp(min.z, max.z, Math.random()));
-                // If ray cast intercepts an odd number of sides, point is inside
-                this._raycaster.set(randomPoint, new THREE.Vector3(1, 1, 1));
-                const intersects = this._raycaster.intersectObject(this.mesh);
-                const insideVolume = (intersects.length % 2 === 1);
-                // If inside, return; if not, try again
-                return insideVolume
-                    ? { position: randomPoint, normal: this._calculatePointNormal(randomPoint) }
-                    : this.getPoint();
+                // Search for the allotted iterations
+                let iterations = 0;
+                while (iterations < EmissionShape.maxVolumeIterations) {
+                    const simulationScene = new THREE.Scene();
+                    simulationScene.add(this._mesh);
+                    // If ray cast intercepts an odd number of sides, point is inside
+                    this._raycaster.set(randomPoint, new THREE.Vector3(1, 1, 1));
+                    const intersects = this._raycaster.intersectObject(this._mesh);
+                    // If inside, return; if not, try again
+                    if (intersects.length % 2 === 1) {
+                        return { position: randomPoint, normal: this._calculatePointNormal(randomPoint) };
+                    }
+                    iterations += 1;
+                }
+                // If not found, get from surface sampler
+                return this.getPoint(EmissionSource_1.EmissionSource.Surface);
         }
     }
 }
+EmissionShape.maxVolumeIterations = 5;
+EmissionShape._doubleSidedMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide });
 EmissionShape.Box = new EmissionShape(new THREE.BoxBufferGeometry());
 EmissionShape.Sphere = new EmissionShape(new THREE.SphereBufferGeometry());
 EmissionShape.Cone = new EmissionShape(new THREE.ConeBufferGeometry());

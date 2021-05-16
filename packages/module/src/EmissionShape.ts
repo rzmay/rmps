@@ -1,16 +1,22 @@
 import * as THREE from 'three';
-import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler';
 import { BufferAttribute } from 'three';
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler';
 import { EmissionSource } from './enums/EmissionSource';
 
 class EmissionShape {
-    static Box = new EmissionShape(new THREE.BoxBufferGeometry());
+    static maxVolumeIterations = 5;
 
-    static Sphere = new EmissionShape(new THREE.SphereBufferGeometry());
+    private static readonly _doubleSidedMaterial = new THREE.MeshBasicMaterial(
+      { side: THREE.DoubleSide },
+    );
 
-    static Cone = new EmissionShape(new THREE.ConeBufferGeometry());
+    static readonly Box = new EmissionShape(new THREE.BoxBufferGeometry());
 
-    static Torus = new EmissionShape(new THREE.TorusBufferGeometry());
+    static readonly Sphere = new EmissionShape(new THREE.SphereBufferGeometry());
+
+    static readonly Cone = new EmissionShape(new THREE.ConeBufferGeometry());
+
+    static readonly Torus = new EmissionShape(new THREE.TorusBufferGeometry());
 
     source: EmissionSource;
 
@@ -31,8 +37,8 @@ class EmissionShape {
       this._geometry = geometry;
       this.source = source;
 
-      this._mesh = new THREE.Mesh(this._geometry);
-      this._surfaceSampler = new MeshSurfaceSampler(new THREE.Mesh(this._geometry))
+      this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
+      this._surfaceSampler = new MeshSurfaceSampler(this._mesh)
         .build();
 
       this.computeVertexNormals();
@@ -41,16 +47,15 @@ class EmissionShape {
 
     set geometry(value: THREE.BufferGeometry) {
       this._geometry = value;
-      this._mesh = new THREE.Mesh(this._geometry);
+      this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
       this._surfaceSampler = new MeshSurfaceSampler(this._mesh);
 
-      this._geometry.computeVertexNormals();
+      this.computeVertexNormals();
       this._geometry.computeBoundingBox();
+      this._mesh.updateMatrix();
     }
 
-    get mesh(): THREE.Mesh {
-      return this._mesh;
-    }
+    get geometry() { return this._geometry; }
 
     get vertices() {
       const vertices: BufferAttribute = this._geometry.getAttribute('position') as BufferAttribute;
@@ -72,8 +77,7 @@ class EmissionShape {
       // Get the closest vertices
       const { vertices } = this;
       const closest = vertices
-        .map((_, index) => index)
-        .sort((a, b) => point.distanceTo(vertices[a]) - point.distanceTo(vertices[b]))
+        .sort((a, b) => Math.abs(point.distanceTo(b)) - Math.abs(point.distanceTo(a)))
         .splice(maxVertices);
 
       // Get weighted average
@@ -84,12 +88,14 @@ class EmissionShape {
         (a, b) => a + b,
       );
       const weightedMean = (factorsArray: THREE.Vector3[], weightsArray: number[]) => sumVectors(
-        factorsArray.map((factor, index) => factor.multiplyScalar(weightsArray[index])),
+        factorsArray.map(
+          (factor, index) => factor.multiplyScalar(weightsArray[index]),
+        ),
       ).divideScalar(sumArray(weightsArray));
 
       return weightedMean(
-        this._vertexNormals.filter((n, i) => closest.includes(i)),
-        closest.map((i) => point.distanceTo(vertices[i])),
+        closest,
+        closest.map((vector) => Math.abs(point.distanceTo(vector))),
       );
     }
 
@@ -109,8 +115,8 @@ class EmissionShape {
       this._vertexNormals = res;
     }
 
-    getPoint(): { position: THREE.Vector3, normal: THREE.Vector3 } {
-      switch (this.source) {
+    getPoint(overrideSource?: EmissionSource): { position: THREE.Vector3, normal: THREE.Vector3 } {
+      switch (overrideSource ?? this.source) {
         case EmissionSource.Vertices: // Select random vertex
           const { vertices } = this;
           const vertexIndex = Math.floor(Math.random() * vertices.length);
@@ -133,15 +139,27 @@ class EmissionShape {
             THREE.MathUtils.lerp(min.z, max.z, Math.random()),
           );
 
-          // If ray cast intercepts an odd number of sides, point is inside
-          this._raycaster.set(randomPoint, new THREE.Vector3(1, 1, 1));
-          const intersects = this._raycaster.intersectObject(this.mesh);
-          const insideVolume = (intersects.length % 2 === 1);
+          // Search for the allotted iterations
+          let iterations = 0;
+          while (iterations < EmissionShape.maxVolumeIterations) {
+            const simulationScene = new THREE.Scene();
+            simulationScene.add(this._mesh);
 
-          // If inside, return; if not, try again
-          return insideVolume
-            ? { position: randomPoint, normal: this._calculatePointNormal(randomPoint) }
-            : this.getPoint();
+            // If ray cast intercepts an odd number of sides, point is inside
+            this._raycaster.set(randomPoint, new THREE.Vector3(1, 1, 1));
+
+            const intersects = this._raycaster.intersectObject(this._mesh);
+
+            // If inside, return; if not, try again
+            if (intersects.length % 2 === 1) {
+              return { position: randomPoint, normal: this._calculatePointNormal(randomPoint) };
+            }
+
+            iterations += 1;
+          }
+
+          // If not found, get from surface sampler
+          return this.getPoint(EmissionSource.Surface);
       }
     }
 }

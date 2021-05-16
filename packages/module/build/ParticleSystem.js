@@ -6,7 +6,7 @@ const Emitter_1 = require("./Emitter");
 const acceptMultiple_1 = require("./helpers/acceptMultiple");
 const SpriteRenderer_1 = require("./renderers/SpriteRenderer");
 class ParticleSystem extends THREE.Object3D {
-    constructor(emitter = new Emitter_1.default(), renderer = new SpriteRenderer_1.default(), modules = []) {
+    constructor(emitter = new Emitter_1.default({ radial: true }), renderer = new SpriteRenderer_1.default(), modules = []) {
         super();
         this.particles = [];
         this.emitters = [];
@@ -40,7 +40,6 @@ class ParticleSystem extends THREE.Object3D {
         this.particles.forEach((particle, index) => {
             particle.update(this.deltaTime);
             if (Date.now() - particle.startTime > particle.lifetime * 1000) {
-                console.log('BRUH!!');
                 this.particles.splice(index, 1);
             }
         });

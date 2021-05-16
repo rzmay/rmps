@@ -20,7 +20,7 @@ class ParticleSystem extends THREE.Object3D {
     private lastFrame: number;
 
     constructor(
-      emitter: Emitter | Emitter[] = new Emitter(),
+      emitter: Emitter | Emitter[] = new Emitter({ radial: true }),
       renderer: Renderer | Renderer[] = new SpriteRenderer(),
       modules: Module | Module[] = [],
     ) {
@@ -63,7 +63,6 @@ class ParticleSystem extends THREE.Object3D {
         particle.update(this.deltaTime);
 
         if (Date.now() - particle.startTime > particle.lifetime * 1000) {
-          console.log('BRUH!!');
           this.particles.splice(index, 1);
         }
       });
