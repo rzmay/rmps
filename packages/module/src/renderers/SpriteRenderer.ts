@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import Renderer from '../interfaces/Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
+import simple from '../assets/images/simple.png';
 
 class SpriteRenderer implements Renderer {
     texture: THREE.Texture;
@@ -12,15 +13,15 @@ class SpriteRenderer implements Renderer {
 
     private points: THREE.Points;
 
-    constructor(texture: string | THREE.Texture = '../assets/images/snowflake.png') {
+    constructor(texture: string | THREE.Texture = simple) {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
       this.geometry = new THREE.BufferGeometry();
       this.material = new THREE.PointsMaterial({
         map: this.texture,
         color: new THREE.Color(0xff0000),
         size: 1,
-        blending: THREE.AdditiveBlending,
-        depthTest: false,
+        depthTest: true,
+        depthWrite: false,
         transparent: true,
       });
 

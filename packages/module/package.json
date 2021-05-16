@@ -5,7 +5,9 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
-    "build": "tsc --watch",
+    "build": "tsc && yarn run copy",
+    "copy": "rm -rf build/assets && cp -r src/assets build/assets",
+    "dev": "concurrently -k \"tsc --watch\" \"watch 'yarn run copy' src/assets\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Robert May",
@@ -17,8 +19,10 @@
   "devDependencies": {
     "@types/three": "^0.128.0",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "concurrently": "^6.1.0",
     "eslint": "^7.26.0",
     "eslint-config-airbnb": "^18.2.1",
-    "typescript": "^4.2.4"
+    "typescript": "^4.2.4",
+    "watch": "^1.0.2"
   }
 }

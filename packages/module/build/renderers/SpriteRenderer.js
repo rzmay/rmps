@@ -1,16 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const THREE = require("three");
+const simple_png_1 = require("../assets/images/simple.png");
 class SpriteRenderer {
-    constructor(texture = '../assets/images/snowflake.png') {
+    constructor(texture = simple_png_1.default) {
         this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
         this.geometry = new THREE.BufferGeometry();
         this.material = new THREE.PointsMaterial({
             map: this.texture,
             color: new THREE.Color(0xff0000),
             size: 1,
-            blending: THREE.AdditiveBlending,
-            depthTest: false,
+            depthTest: true,
+            depthWrite: false,
             transparent: true,
         });
         this.points = new THREE.Points(this.geometry, this.material);
