@@ -24,8 +24,6 @@ class Emitter {
 
     private _lastSpawn: number;
 
-    private _nextBurstIndex: number;
-
     private _startTime: number;
 
     constructor(
@@ -44,12 +42,7 @@ class Emitter {
       this.looping = looping;
 
       this._lastSpawn = Date.now();
-      this._nextBurstIndex = 0;
       this._startTime = Date.now();
-    }
-
-    get nextBurst(): SpawnBurst {
-      return this.bursts[this._nextBurstIndex];
     }
 
     update(particles: Particle[]) {

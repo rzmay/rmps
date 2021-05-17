@@ -14,10 +14,8 @@ declare class Emitter {
     bursts: SpawnBurst[];
     initialValues: Partial<InitialParticleValues>;
     private _lastSpawn;
-    private _nextBurstIndex;
     private _startTime;
     constructor(initialValues?: Partial<InitialParticleValues>, source?: EmissionShape, bursts?: SpawnBurst[], rate?: number, duration?: number, looping?: boolean);
-    get nextBurst(): SpawnBurst;
     update(particles: Particle[]): void;
     private spawnParticle;
 }

@@ -12,11 +12,7 @@ class Emitter {
         this.duration = duration;
         this.looping = looping;
         this._lastSpawn = Date.now();
-        this._nextBurstIndex = 0;
         this._startTime = Date.now();
-    }
-    get nextBurst() {
-        return this.bursts[this._nextBurstIndex];
     }
     update(particles) {
         const now = Date.now();
