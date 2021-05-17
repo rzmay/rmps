@@ -4,6 +4,7 @@ import InitialParticleValues from './interfaces/InitialParticleValues';
 declare type SpawnBurst = {
     time: number;
     count: number;
+    fired?: boolean;
 };
 declare class Emitter {
     source: EmissionShape;

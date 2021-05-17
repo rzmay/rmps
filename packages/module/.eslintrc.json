@@ -6,6 +6,7 @@
     "import/no-unresolved": "off",
     "import/extensions": "off",
     "no-underscore-dangle": "off",
-    "no-case-declarations": "off"
+    "no-case-declarations": "off",
+    "no-param-reassign": ["error", { "props": false }]
   }
 }

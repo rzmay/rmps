@@ -3,7 +3,11 @@ import EmissionShape from './EmissionShape';
 import Particle from './Particle';
 import InitialParticleValues from './interfaces/InitialParticleValues';
 
-type SpawnBurst = {time: number, count: number};
+type SpawnBurst = {
+    time: number,
+    count: number,
+    fired?: boolean,
+};
 
 class Emitter {
     source: EmissionShape;
@@ -63,14 +67,21 @@ class Emitter {
         }
 
         // Bursts
-        if (this.bursts.length > 0 && now - this._startTime > this.nextBurst.time * this.duration) {
-          for (let i = 0; i < this.nextBurst.count; i += 1) {
-            this.spawnParticle(particles);
+        this.bursts.forEach((burst) => {
+          if (!burst.fired && burst.time * this.duration * 1000 < now - this._startTime) {
+            for (let j = 0; j < burst.count; j += 1) {
+              this.spawnParticle(particles);
+            }
+
+            burst.fired = true;
           }
-          this._nextBurstIndex = (this._nextBurstIndex + 1) % this.bursts.length;
-        }
+        });
       } else if (this.looping) {
+        // Reset time
         this._startTime = now;
+
+        // Reset bursts
+        this.bursts.forEach((burst) => { burst.fired = false; });
       }
     }
 
