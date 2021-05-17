@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Renderer from '../interfaces/Renderer';
+import { Renderer } from '../interfaces/Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/simple.png';
@@ -7,11 +7,11 @@ import simple from '../assets/images/simple.png';
 class SpriteRenderer implements Renderer {
     texture: THREE.Texture;
 
-    private geometry: THREE.BufferGeometry;
+    private readonly geometry: THREE.BufferGeometry;
 
-    private material: THREE.Material;
+    private readonly material: THREE.Material;
 
-    private points: THREE.Points;
+    private readonly points: THREE.Points;
 
     constructor(texture: string | THREE.Texture = simple) {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;

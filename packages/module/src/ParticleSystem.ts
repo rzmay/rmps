@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import Particle from './Particle';
 import Emitter from './Emitter';
 import Module from './Module';
-import Renderer from './interfaces/Renderer';
+import { Renderer } from './interfaces/Renderer';
 import { acceptMultiple } from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
 import EmissionShape from './EmissionShape';
@@ -16,7 +16,7 @@ class ParticleSystem extends THREE.Object3D {
 
     renderers: Renderer[] = [];
 
-    private deltaTime: number = 0;
+    private deltaTime = 0;
 
     private lastFrame: number;
 
