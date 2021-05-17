@@ -51,25 +51,25 @@ class Emitter {
     update(particles: Particle[]) {
       const now = Date.now();
 
-      // Rate
-      const timeSinceLast = now - this._lastSpawn;
-      const secondsPerParticle = (1000 / this.rate);
-      const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
-      for (let i = 0; i < particlesDue; i += 1) {
-        this.spawnParticle(particles);
-        this._lastSpawn = now;
-      }
-
-      // Bursts
-      if (this.bursts.length > 0 && now - this._startTime > this.nextBurst.time) {
-        for (let i = 0; i < this.nextBurst.count; i += 1) {
+      // Spawning
+      if (now - this._startTime < this.duration * 1000) {
+        // Rate
+        const timeSinceLast = now - this._lastSpawn;
+        const secondsPerParticle = (1000 / this.rate);
+        const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
+        for (let i = 0; i < particlesDue; i += 1) {
           this.spawnParticle(particles);
+          this._lastSpawn = now;
         }
-        this._nextBurstIndex = (this._nextBurstIndex + 1) % this.bursts.length;
-      }
 
-      // Looping
-      if (now - this._startTime > this.duration && this.looping) {
+        // Bursts
+        if (this.bursts.length > 0 && now - this._startTime > this.nextBurst.time * this.duration) {
+          for (let i = 0; i < this.nextBurst.count; i += 1) {
+            this.spawnParticle(particles);
+          }
+          this._nextBurstIndex = (this._nextBurstIndex + 1) % this.bursts.length;
+        }
+      } else if (this.looping) {
         this._startTime = now;
       }
     }
