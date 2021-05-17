@@ -6,8 +6,8 @@
   "types": "build/index.d.ts",
   "scripts": {
     "build": "tsc && yarn run copy",
-    "copy": "rm -rf build/assets && cp -r src/assets build/assets",
-    "dev": "concurrently -k \"tsc --watch\" \"watch 'yarn run copy' src/assets\"",
+    "copy": "rm -rf build/assets && cp -r src/assets build/assets && rm -rf build/shaders && cp -r src/shaders build/shaders",
+    "dev": "concurrently -k \"tsc --watch\" \"watch 'yarn run copy' src/assets src/shaders\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Robert May",

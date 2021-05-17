@@ -4,8 +4,8 @@ import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 declare class SpriteRenderer implements Renderer {
     texture: THREE.Texture;
+    private material;
     private readonly geometry;
-    private readonly material;
     private readonly points;
     constructor(texture?: string | THREE.Texture);
     setup(system: ParticleSystem): void;

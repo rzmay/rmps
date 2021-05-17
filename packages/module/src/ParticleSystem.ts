@@ -5,7 +5,6 @@ import Module from './Module';
 import { Renderer } from './interfaces/Renderer';
 import { acceptMultiple } from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
-import EmissionShape from './EmissionShape';
 
 class ParticleSystem extends THREE.Object3D {
     particles: Particle[] = [];
