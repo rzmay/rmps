@@ -52,9 +52,12 @@ class Emitter {
       const now = Date.now();
 
       // Rate
-      if (now - this._lastSpawn > 1000 / this.rate) {
-        this._lastSpawn = now;
+      const timeSinceLast = now - this._lastSpawn;
+      const secondsPerParticle = (1000 / this.rate);
+      const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
+      for (let i = 0; i < particlesDue; i += 1) {
         this.spawnParticle(particles);
+        this._lastSpawn = now;
       }
 
       // Bursts
