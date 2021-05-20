@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Renderer from '../interfaces/Renderer';
+import { Renderer } from '../interfaces/Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/simple.png';
