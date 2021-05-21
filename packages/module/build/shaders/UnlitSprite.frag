@@ -2,6 +2,16 @@ uniform sampler2D pointTexture;
 
 varying vec4 vColor;
 varying float aspectRatio;
+varying float angle;
+
+vec2 rotate(vec2 uv, float rotation) {
+    float mid = 0.5;
+    return vec2(
+        cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+        cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+    );
+}
+
 
 void main() {
 
@@ -18,6 +28,5 @@ void main() {
     vec2 scaledFromCenter = fromCenter * scaleVector;
     vec2 resultCoord = vec2(.5,.5) + scaledFromCenter;
 
-    gl_FragColor = gl_FragColor * texture2D( pointTexture, resultCoord );
-
+    gl_FragColor = gl_FragColor * texture2D( pointTexture, rotate(resultCoord, angle) );
 }
