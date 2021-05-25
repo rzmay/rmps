@@ -8,6 +8,12 @@
     "no-underscore-dangle": "off",
     "no-case-declarations": "off",
     "no-loop-func": "off",
-    "no-param-reassign": ["error", { "props": false }]
+    "no-param-reassign": ["error", { "props": false }],
+    "max-len": [
+      "warn",
+      {
+        "code": 120
+      }
+    ]
   }
 }
