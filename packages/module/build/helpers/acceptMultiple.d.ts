@@ -1,1 +1,1 @@
-export declare function acceptMultiple<T>(param: T | T[]): T[];
+export default function acceptMultiple<T>(param: T | T[]): T[];
