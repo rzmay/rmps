@@ -13,6 +13,7 @@
   "author": "Robert May",
   "license": "MIT",
   "dependencies": {
+    "curves": "^1.1.0",
     "nanoid": "^3.1.23",
     "three": "^0.128.0"
   },

@@ -4,18 +4,17 @@ const THREE = require("three");
 const Emitter_1 = require("./Emitter");
 const acceptMultiple_1 = require("./helpers/acceptMultiple");
 const SpriteRenderer_1 = require("./renderers/SpriteRenderer");
-const LightRenderer_1 = require("./renderers/LightRenderer");
 class ParticleSystem extends THREE.Object3D {
-    constructor(emitter = new Emitter_1.default({ radial: true }), renderer = [new SpriteRenderer_1.default(), new LightRenderer_1.default()], modules = []) {
+    constructor(emitter = new Emitter_1.default({ radial: true }), renderer = new SpriteRenderer_1.default(), modules = []) {
         super();
         this.particles = [];
         this.emitters = [];
         this.modules = [];
         this.renderers = [];
         this.deltaTime = 0;
-        this.emitters = acceptMultiple_1.acceptMultiple(emitter);
-        this.renderers = acceptMultiple_1.acceptMultiple(renderer);
-        this.modules = acceptMultiple_1.acceptMultiple(modules);
+        this.emitters = acceptMultiple_1.default(emitter);
+        this.renderers = acceptMultiple_1.default(renderer);
+        this.modules = acceptMultiple_1.default(modules);
         this.lastFrame = Date.now();
         this.renderers.forEach((r) => {
             r.setup(this);

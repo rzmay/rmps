@@ -3,11 +3,8 @@ import Particle from './Particle';
 import Emitter from './Emitter';
 import Module from './Module';
 import { Renderer } from './interfaces/Renderer';
-import { acceptMultiple } from './helpers/acceptMultiple';
+import acceptMultiple from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
-import EmissionShape from './EmissionShape';
-import MeshRenderer from './renderers/MeshRenderer';
-import LightRenderer from './renderers/LightRenderer';
 
 class ParticleSystem extends THREE.Object3D {
     particles: Particle[] = [];
@@ -24,7 +21,7 @@ class ParticleSystem extends THREE.Object3D {
 
     constructor(
       emitter: Emitter | Emitter[] = new Emitter({ radial: true }),
-      renderer: Renderer | Renderer[] = [new SpriteRenderer(), new LightRenderer()],
+      renderer: Renderer | Renderer[] = new SpriteRenderer(),
       modules: Module | Module[] = [],
     ) {
       super();
