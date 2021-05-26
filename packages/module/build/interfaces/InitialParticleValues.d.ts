@@ -1,17 +1,18 @@
 import * as THREE from 'three';
-export default interface InitialParticleValues {
-    lifetime: number;
-    speed: number;
-    position: THREE.Vector3;
-    rotation: THREE.Vector3;
-    scale: THREE.Vector3;
-    velocity: THREE.Vector3;
-    angularVelocity: THREE.Vector3;
-    scalarVelocity: THREE.Vector3;
-    acceleration: THREE.Vector3;
-    angularAcceleration: THREE.Vector3;
-    scalarAcceleration: THREE.Vector3;
-    color: THREE.Color;
-    alpha: number;
-    radial: boolean;
+import { dynamicValue } from '../types/dynamicValue';
+export interface InitialParticleValues {
+    lifetime: dynamicValue<number>;
+    speed: dynamicValue<number>;
+    position: dynamicValue<THREE.Vector3>;
+    rotation: dynamicValue<THREE.Vector3>;
+    scale: dynamicValue<THREE.Vector3>;
+    velocity: dynamicValue<THREE.Vector3>;
+    angularVelocity: dynamicValue<THREE.Vector3>;
+    scalarVelocity: dynamicValue<THREE.Vector3>;
+    acceleration: dynamicValue<THREE.Vector3>;
+    angularAcceleration: dynamicValue<THREE.Vector3>;
+    scalarAcceleration: dynamicValue<THREE.Vector3>;
+    color: dynamicValue<THREE.Color>;
+    alpha: dynamicValue<number>;
+    radial: dynamicValue<number>;
 }

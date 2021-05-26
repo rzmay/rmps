@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const THREE = require("three");
 const EmissionShape_1 = require("./EmissionShape");
 const Particle_1 = require("./Particle");
+const evaluateDynamicVector3_1 = require("./helpers/evaluateDynamicVector3");
+const evaluateDynamicNumber_1 = require("./helpers/evaluateDynamicNumber");
+const evaluateDynamicColor_1 = require("./helpers/evaluateDynamicColor");
 class Emitter {
     constructor(initialValues = {}, source = EmissionShape_1.default.Sphere, bursts = [], rate = 5, duration = 10, looping = true) {
         this.source = source;
@@ -44,16 +46,17 @@ class Emitter {
         }
     }
     spawnParticle(particles) {
-        var _a, _b, _c, _d, _e, _f;
+        const now = Date.now();
+        const time = (now - this._startTime / this.duration);
         const { position, normal } = this.source.getPoint();
-        const zeroVector = new THREE.Vector3(0, 0, 0);
-        const particle = new Particle_1.default(position, this.initialValues.rotation, this.initialValues.scale, this.initialValues.color, this.initialValues.alpha, this.initialValues.lifetime);
-        particle.velocity = (_a = this.initialValues.velocity) !== null && _a !== void 0 ? _a : (this.initialValues.radial ? normal : zeroVector);
-        particle.angularVelocity = (_b = this.initialValues.angularVelocity) !== null && _b !== void 0 ? _b : zeroVector;
-        particle.scalarVelocity = (_c = this.initialValues.scalarVelocity) !== null && _c !== void 0 ? _c : zeroVector;
-        particle.acceleration = (_d = this.initialValues.acceleration) !== null && _d !== void 0 ? _d : zeroVector;
-        particle.angularAcceleration = (_e = this.initialValues.angularAcceleration) !== null && _e !== void 0 ? _e : zeroVector;
-        particle.scalarAcceleration = (_f = this.initialValues.scalarAcceleration) !== null && _f !== void 0 ? _f : zeroVector;
+        const particle = new Particle_1.default(position, evaluateDynamicVector3_1.default(this.initialValues.rotation, time), evaluateDynamicVector3_1.default(this.initialValues.scale, time), evaluateDynamicColor_1.default(this.initialValues.color, time), evaluateDynamicNumber_1.default(this.initialValues.alpha, time), evaluateDynamicNumber_1.default(this.initialValues.lifetime, time));
+        particle.velocity = evaluateDynamicVector3_1.default(this.initialValues.velocity, time)
+            .add(normal.multiplyScalar(evaluateDynamicNumber_1.default(this.initialValues.radial, time)));
+        particle.angularVelocity = evaluateDynamicVector3_1.default(this.initialValues.angularVelocity, time);
+        particle.scalarVelocity = evaluateDynamicVector3_1.default(this.initialValues.scalarVelocity, time);
+        particle.acceleration = evaluateDynamicVector3_1.default(this.initialValues.acceleration, time);
+        particle.angularAcceleration = evaluateDynamicVector3_1.default(this.initialValues.angularAcceleration, time);
+        particle.scalarAcceleration = evaluateDynamicVector3_1.default(this.initialValues.scalarAcceleration, time);
         particles.push(particle);
     }
 }

@@ -5,7 +5,7 @@ const Emitter_1 = require("./Emitter");
 const acceptMultiple_1 = require("./helpers/acceptMultiple");
 const SpriteRenderer_1 = require("./renderers/SpriteRenderer");
 class ParticleSystem extends THREE.Object3D {
-    constructor(emitter = new Emitter_1.default({ radial: true }), renderer = new SpriteRenderer_1.default(), modules = []) {
+    constructor(emitter = new Emitter_1.default({ radial: 1 }), renderer = new SpriteRenderer_1.default(), modules = []) {
         super();
         this.particles = [];
         this.emitters = [];

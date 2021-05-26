@@ -20,7 +20,7 @@ class ParticleSystem extends THREE.Object3D {
     private lastFrame: number;
 
     constructor(
-      emitter: Emitter | Emitter[] = new Emitter({ radial: true }),
+      emitter: Emitter | Emitter[] = new Emitter({ radial: 1 }),
       renderer: Renderer | Renderer[] = new SpriteRenderer(),
       modules: Module | Module[] = [],
     ) {

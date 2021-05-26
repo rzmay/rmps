@@ -1,6 +1,6 @@
 import EmissionShape from './EmissionShape';
 import Particle from './Particle';
-import InitialParticleValues from './interfaces/InitialParticleValues';
+import { InitialParticleValues } from './interfaces/InitialParticleValues';
 declare type SpawnBurst = {
     time: number;
     count: number;
