@@ -1,14 +1,9 @@
-import ParticleSystem from './ParticleSystem';
+export { default as ParticleSystem } from './ParticleSystem';
 import Particle from './Particle';
 import Emitter from './Emitter';
-import { Renderer } from './interfaces/Renderer';
+import MeshRenderer from "./renderers/MeshRenderer";
 import SpriteRenderer from './renderers/SpriteRenderer';
 import Module from './Module';
-
-export {
-  ParticleSystem,
-  Particle,
-  Emitter,
-  SpriteRenderer,
-  Module,
-};
+import { Renderer } from './interfaces/Renderer';
+import EmissionShape from './EmissionShape';
+import { EmissionSource } from './enums/EmissionSource';

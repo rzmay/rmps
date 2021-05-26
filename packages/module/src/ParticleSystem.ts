@@ -15,7 +15,7 @@ class ParticleSystem extends THREE.Object3D {
 
     renderers: Renderer[] = [];
 
-    private deltaTime: number = 0;
+    private deltaTime = 0;
 
     private lastFrame: number;
 

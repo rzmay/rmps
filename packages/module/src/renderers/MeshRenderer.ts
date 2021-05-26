@@ -10,10 +10,13 @@ class MeshRenderer implements Renderer {
 
     private dummy: THREE.Object3D;
 
-    constructor(mesh: THREE.Mesh = new THREE.Mesh(
-      new THREE.SphereBufferGeometry(),
-      new THREE.MeshStandardMaterial(),
-    ), maxParticles: number = 10000) {
+    constructor(
+      mesh: THREE.Mesh = new THREE.Mesh(
+        new THREE.SphereBufferGeometry(),
+        new THREE.MeshStandardMaterial(),
+      ),
+      maxParticles = 10000,
+    ) {
       this.mesh = mesh;
 
       this.instances = new THREE.InstancedMesh(mesh.geometry, mesh.material, maxParticles);

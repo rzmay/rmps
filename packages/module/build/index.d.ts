@@ -1,6 +1,1 @@
-import ParticleSystem from './ParticleSystem';
-import Particle from './Particle';
-import Emitter from './Emitter';
-import SpriteRenderer from './renderers/SpriteRenderer';
-import Module from './Module';
-export { ParticleSystem, Particle, Emitter, SpriteRenderer, Module, };
+export { default as ParticleSystem } from './ParticleSystem';

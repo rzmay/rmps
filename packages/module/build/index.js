@@ -1,13 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Module = exports.SpriteRenderer = exports.Emitter = exports.Particle = exports.ParticleSystem = void 0;
-const ParticleSystem_1 = require("./ParticleSystem");
-exports.ParticleSystem = ParticleSystem_1.default;
-const Particle_1 = require("./Particle");
-exports.Particle = Particle_1.default;
-const Emitter_1 = require("./Emitter");
-exports.Emitter = Emitter_1.default;
-const SpriteRenderer_1 = require("./renderers/SpriteRenderer");
-exports.SpriteRenderer = SpriteRenderer_1.default;
-const Module_1 = require("./Module");
-exports.Module = Module_1.default;
+exports.ParticleSystem = void 0;
+var ParticleSystem_1 = require("./ParticleSystem");
+Object.defineProperty(exports, "ParticleSystem", { enumerable: true, get: function () { return ParticleSystem_1.default; } });
