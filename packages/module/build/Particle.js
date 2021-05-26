@@ -19,6 +19,7 @@ class Particle {
         this.startTime = Date.now();
         this.lifetime = lifetime;
         this.id = nanoid_1.nanoid();
+        this.data = {};
     }
     update(deltaTime) {
         // Update velocities

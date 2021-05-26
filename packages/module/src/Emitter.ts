@@ -30,8 +30,8 @@ class Emitter {
       initialValues: Partial<InitialParticleValues> = {},
       source: EmissionShape = EmissionShape.Sphere,
       bursts: SpawnBurst[] = [],
-      rate = 1,
-      duration = 5,
+      rate = 5,
+      duration = 10,
       looping = true,
     ) {
       this.source = source;

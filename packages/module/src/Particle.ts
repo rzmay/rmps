@@ -32,6 +32,9 @@ class Particle {
 
     id: string;
 
+    // Used to store custom data for special components
+    data: any;
+
     constructor(
       position: THREE.Vector3,
       rotation: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
@@ -50,6 +53,8 @@ class Particle {
       this.lifetime = lifetime;
 
       this.id = nanoid();
+
+      this.data = {};
     }
 
     update(deltaTime: number) {

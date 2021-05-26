@@ -4,7 +4,7 @@ const THREE = require("three");
 const EmissionShape_1 = require("./EmissionShape");
 const Particle_1 = require("./Particle");
 class Emitter {
-    constructor(initialValues = {}, source = EmissionShape_1.default.Sphere, bursts = [], rate = 1, duration = 5, looping = true) {
+    constructor(initialValues = {}, source = EmissionShape_1.default.Sphere, bursts = [], rate = 5, duration = 10, looping = true) {
         this.source = source;
         this.initialValues = initialValues;
         this.rate = rate;

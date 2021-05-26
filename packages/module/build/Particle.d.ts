@@ -15,6 +15,7 @@ declare class Particle {
     startTime: number;
     lifetime: number;
     id: string;
+    data: any;
     constructor(position: THREE.Vector3, rotation?: THREE.Vector3, scale?: THREE.Vector3, color?: THREE.Color, alpha?: number, lifetime?: number);
     update(deltaTime: number): void;
 }
