@@ -10,6 +10,12 @@
     "no-loop-func": "off",
     "no-param-reassign": ["error", { "props": false }],
     "@typescript-eslint/no-extra-semi": "off",
-    "@typescript-eslint/explicit-module-boundary-types": "off"
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "max-len": [
+      "warn",
+      {
+        "code": 120
+      }
+    ]
   }
 }
