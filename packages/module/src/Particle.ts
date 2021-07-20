@@ -30,6 +30,8 @@ class Particle {
 
     lifetime: number;
 
+    time: number;
+
     id: string;
 
     // Used to store custom data for special components
@@ -51,6 +53,7 @@ class Particle {
 
       this.startTime = Date.now();
       this.lifetime = lifetime;
+      this.time = 0;
 
       this.id = nanoid();
 
@@ -58,6 +61,9 @@ class Particle {
     }
 
     update(deltaTime: number) {
+      // Update time
+      this.time = (Date.now() - this.startTime) / (this.lifetime * 1000);
+
       // Update velocities
       this.velocity.addScaledVector(this.acceleration, deltaTime * this.speed);
       this.angularVelocity.addScaledVector(this.angularAcceleration, deltaTime * this.speed);

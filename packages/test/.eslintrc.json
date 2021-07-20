@@ -38,6 +38,7 @@
     "no-console": "off",
     "react/require-default-props": "off",
     "react/jsx-filename-extension": "off",
+    "space-infix-ops": "off",
     "import/extensions": "off",
     "no-shadow": "off",
     "global-require": "off",

@@ -50,6 +50,8 @@ class ParticleSystem extends THREE.Object3D {
       });
 
       this.particles.forEach((particle, index) => {
+        this.modules.forEach((module) => module.modify(particle, this.deltaTime));
+
         particle.update(this.deltaTime);
 
         if (Date.now() - particle.startTime > particle.lifetime * 1000) {
