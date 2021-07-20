@@ -8,7 +8,7 @@ export default function evaluateDynamicColor(
 ): THREE.Color {
   return evaluateDynamic<THREE.Color>(
     value,
-    (a, b, t) => (a.add((b.sub(a).multiplyScalar(t)))),
+    (a, b, t) => (a.clone().add((b.clone().sub(a).multiplyScalar(t)))),
     time,
   );
 }

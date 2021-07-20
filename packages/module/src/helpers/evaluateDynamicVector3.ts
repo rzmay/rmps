@@ -8,7 +8,7 @@ export default function evaluateDynamicVector(
 ): THREE.Vector3 {
   return evaluateDynamic<THREE.Vector3>(
     value,
-    (a, b, t) => (a.add((b.sub(a).multiplyScalar(t)))),
+    (a, b, t) => (a.clone().add((b.clone().sub(a).multiplyScalar(t)))),
     time,
   );
 }

@@ -1,3 +1,1 @@
-import Curve from 'curves';
-
-export type dynamicValue<T> = T | Curve<T> | { min: dynamicValue<T>, max: dynamicValue<T> };
+export type dynamicValue<T> = T | ((t: number) => T) | { min: dynamicValue<T>, max: dynamicValue<T>, dynamicRange: boolean };

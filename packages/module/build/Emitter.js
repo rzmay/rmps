@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const THREE = require("three");
 const EmissionShape_1 = require("./EmissionShape");
 const Particle_1 = require("./Particle");
 const evaluateDynamicVector3_1 = require("./helpers/evaluateDynamicVector3");
 const evaluateDynamicNumber_1 = require("./helpers/evaluateDynamicNumber");
 const evaluateDynamicColor_1 = require("./helpers/evaluateDynamicColor");
 class Emitter {
-    constructor(initialValues = {}, source = EmissionShape_1.default.Sphere, bursts = [], rate = 5, duration = 10, looping = true) {
+    constructor(initialValues = {}, source = EmissionShape_1.default.Sphere, bursts = [], rate = 50, duration = 10, looping = true) {
         this.source = source;
         this.initialValues = initialValues;
         this.rate = rate;
@@ -46,17 +47,20 @@ class Emitter {
         }
     }
     spawnParticle(particles) {
+        var _a, _b, _c, _d, _e, _f, _g;
         const now = Date.now();
-        const time = (now - this._startTime / this.duration);
+        const time = ((now - this._startTime) / (this.duration * 1000));
         const { position, normal } = this.source.getPoint();
-        const particle = new Particle_1.default(position, evaluateDynamicVector3_1.default(this.initialValues.rotation, time), evaluateDynamicVector3_1.default(this.initialValues.scale, time), evaluateDynamicColor_1.default(this.initialValues.color, time), evaluateDynamicNumber_1.default(this.initialValues.alpha, time), evaluateDynamicNumber_1.default(this.initialValues.lifetime, time));
-        particle.velocity = evaluateDynamicVector3_1.default(this.initialValues.velocity, time)
-            .add(normal.multiplyScalar(evaluateDynamicNumber_1.default(this.initialValues.radial, time)));
-        particle.angularVelocity = evaluateDynamicVector3_1.default(this.initialValues.angularVelocity, time);
-        particle.scalarVelocity = evaluateDynamicVector3_1.default(this.initialValues.scalarVelocity, time);
-        particle.acceleration = evaluateDynamicVector3_1.default(this.initialValues.acceleration, time);
-        particle.angularAcceleration = evaluateDynamicVector3_1.default(this.initialValues.angularAcceleration, time);
-        particle.scalarAcceleration = evaluateDynamicVector3_1.default(this.initialValues.scalarAcceleration, time);
+        const particle = new Particle_1.default(position, evaluateDynamicVector3_1.default((_a = this.initialValues.rotation) !== null && _a !== void 0 ? _a : new THREE.Vector3(0, 0, 0), time), evaluateDynamicVector3_1.default((_b = this.initialValues.scale) !== null && _b !== void 0 ? _b : new THREE.Vector3(1, 1, 1), time), evaluateDynamicColor_1.default((_c = this.initialValues.color) !== null && _c !== void 0 ? _c : new THREE.Color(1, 1, 1), time), evaluateDynamicNumber_1.default((_d = this.initialValues.alpha) !== null && _d !== void 0 ? _d : 1, time), evaluateDynamicNumber_1.default((_e = this.initialValues.lifetime) !== null && _e !== void 0 ? _e : 1, time));
+        particle.velocity = evaluateDynamicVector3_1.default((_f = this.initialValues.velocity) !== null && _f !== void 0 ? _f : new THREE.Vector3(0, 0, 0), time)
+            .add(normal.multiplyScalar(evaluateDynamicNumber_1.default((_g = this.initialValues.radial) !== null && _g !== void 0 ? _g : 0, time)));
+        //
+        // if (this.initialValues.angularVelocity) particle.angularVelocity = evaluateDynamicVector(this.initialValues.angularVelocity, time);
+        // if (this.initialValues.scalarVelocity) particle.scalarVelocity = evaluateDynamicVector(this.initialValues.scalarVelocity, time);
+        //
+        // if (this.initialValues.acceleration) particle.acceleration = evaluateDynamicVector(this.initialValues.acceleration, time);
+        // if (this.initialValues.angularAcceleration) particle.angularAcceleration = evaluateDynamicVector(this.initialValues.angularAcceleration, time);
+        // if (this.initialValues.scalarAcceleration) particle.scalarAcceleration = evaluateDynamicVector(this.initialValues.scalarAcceleration, time);
         particles.push(particle);
     }
 }
