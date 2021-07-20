@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import EmissionShape from './EmissionShape';
 import Particle from './Particle';
-import InitialParticleValues from './interfaces/InitialParticleValues';
+import { InitialParticleValues } from './interfaces/InitialParticleValues';
+import evaluateDynamicVector from './helpers/evaluateDynamicVector3';
+import evaluateDynamicNumber from './helpers/evaluateDynamicNumber';
+import evaluateDynamicColor from './helpers/evaluateDynamicColor';
 
 type SpawnBurst = {
     time: number,
@@ -30,7 +33,7 @@ class Emitter {
       initialValues: Partial<InitialParticleValues> = {},
       source: EmissionShape = EmissionShape.Sphere,
       bursts: SpawnBurst[] = [],
-      rate = 5,
+      rate = 50,
       duration = 10,
       looping = true,
     ) {
@@ -79,26 +82,30 @@ class Emitter {
     }
 
     private spawnParticle(particles: Particle[]) {
+      const now = Date.now();
+      const time = ((now - this._startTime) / (this.duration * 1000));
       const { position, normal } = this.source.getPoint();
-      const zeroVector = new THREE.Vector3(0, 0, 0);
 
       const particle = new Particle(
         position,
-        this.initialValues.rotation,
-        this.initialValues.scale,
-        this.initialValues.color,
-        this.initialValues.alpha,
-        this.initialValues.lifetime,
+        evaluateDynamicVector(this.initialValues.rotation ?? new THREE.Vector3(0, 0, 0), time),
+        evaluateDynamicVector(this.initialValues.scale ?? new THREE.Vector3(1, 1, 1), time),
+        evaluateDynamicColor(this.initialValues.color ?? new THREE.Color(1, 1, 1), time),
+        evaluateDynamicNumber(this.initialValues.alpha ?? 1, time),
+        evaluateDynamicNumber(this.initialValues.lifetime ?? 1, time),
       );
 
-      particle.velocity = this.initialValues.velocity
-          ?? (this.initialValues.radial ? normal : zeroVector);
-      particle.angularVelocity = this.initialValues.angularVelocity ?? zeroVector;
-      particle.scalarVelocity = this.initialValues.scalarVelocity ?? zeroVector;
-
-      particle.acceleration = this.initialValues.acceleration ?? zeroVector;
-      particle.angularAcceleration = this.initialValues.angularAcceleration ?? zeroVector;
-      particle.scalarAcceleration = this.initialValues.scalarAcceleration ?? zeroVector;
+      particle.velocity = evaluateDynamicVector(this.initialValues.velocity ?? new THREE.Vector3(0, 0, 0), time)
+        .add(normal.multiplyScalar(
+          evaluateDynamicNumber(this.initialValues.radial ?? 0, time),
+        ));
+      //
+      // if (this.initialValues.angularVelocity) particle.angularVelocity = evaluateDynamicVector(this.initialValues.angularVelocity, time);
+      // if (this.initialValues.scalarVelocity) particle.scalarVelocity = evaluateDynamicVector(this.initialValues.scalarVelocity, time);
+      //
+      // if (this.initialValues.acceleration) particle.acceleration = evaluateDynamicVector(this.initialValues.acceleration, time);
+      // if (this.initialValues.angularAcceleration) particle.angularAcceleration = evaluateDynamicVector(this.initialValues.angularAcceleration, time);
+      // if (this.initialValues.scalarAcceleration) particle.scalarAcceleration = evaluateDynamicVector(this.initialValues.scalarAcceleration, time);
 
       particles.push(particle);
     }

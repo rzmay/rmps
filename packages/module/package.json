@@ -4,6 +4,9 @@
   "description": "🧅 Modular and extendable particle system for Three.js",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "files": [
+    "build/**/*"
+  ],
   "scripts": {
     "build": "tsc && yarn run copy",
     "copy": "rm -rf build/assets && cp -r src/assets build/assets && rm -rf build/shaders && cp -r src/shaders build/shaders",
@@ -13,6 +16,7 @@
   "author": "Robert May",
   "license": "MIT",
   "dependencies": {
+    "eaz": "^1.0.2",
     "nanoid": "^3.1.23",
     "three": "^0.128.0"
   },
