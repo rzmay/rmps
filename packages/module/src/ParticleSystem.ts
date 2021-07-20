@@ -5,9 +5,6 @@ import Module from './Module';
 import { Renderer } from './interfaces/Renderer';
 import acceptMultiple from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
-import EmissionShape from './EmissionShape';
-import MeshRenderer from './renderers/MeshRenderer';
-import LightRenderer from './renderers/LightRenderer';
 
 class ParticleSystem extends THREE.Object3D {
     particles: Particle[] = [];
@@ -18,12 +15,12 @@ class ParticleSystem extends THREE.Object3D {
 
     renderers: Renderer[] = [];
 
-    private deltaTime: number = 0;
+    private deltaTime = 0;
 
     private lastFrame: number;
 
     constructor(
-      emitter: Emitter | Emitter[] = new Emitter({ radial: true }),
+      emitter: Emitter | Emitter[] = new Emitter({ radial: 1 }),
       renderer: Renderer | Renderer[] = new SpriteRenderer(),
       modules: Module | Module[] = [],
     ) {

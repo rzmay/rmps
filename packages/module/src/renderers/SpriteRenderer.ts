@@ -3,29 +3,36 @@ import { Renderer } from '../interfaces/Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/simple.png';
+import UnlitSprite from '../materials/UnlitSprite';
 
 class SpriteRenderer implements Renderer {
     texture: THREE.Texture;
 
-    private geometry: THREE.BufferGeometry;
-
     private material: THREE.Material;
 
-    private points: THREE.Points;
+    private readonly geometry: THREE.BufferGeometry;
+
+    private readonly points: THREE.Points;
 
     constructor(texture: string | THREE.Texture = simple) {
       this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
       this.geometry = new THREE.BufferGeometry();
+
+      // Preload
       this.material = new THREE.PointsMaterial({
         map: this.texture,
-        color: new THREE.Color(0xff0000),
         size: 1,
         depthTest: true,
         depthWrite: false,
         transparent: true,
       });
-
       this.points = new THREE.Points(this.geometry, this.material);
+
+      // Load
+      UnlitSprite(this.texture).then((material) => {
+        this.material = material;
+        this.points.material = this.material;
+      });
     }
 
     setup(system: ParticleSystem) {
