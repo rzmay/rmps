@@ -17,10 +17,10 @@ class LightRenderer implements Renderer {
     private _system: ParticleSystem | undefined;
 
     constructor(
-      brightness: number = 1,
-      groupingRadiusRatio: number = 0.25,
-      decay: number = 2,
-      count: number = 50,
+      brightness = 1,
+      groupingRadiusRatio = 0.25,
+      decay = 2,
+      count = 50,
     ) {
       this.brightness = brightness;
       this.groupingRadiusRatio = groupingRadiusRatio;
