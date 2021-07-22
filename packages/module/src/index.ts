@@ -4,6 +4,7 @@ export { default as Emitter } from './Emitter';
 export { default as MeshRenderer } from './renderers/MeshRenderer';
 export { default as SpriteRenderer } from './renderers/SpriteRenderer';
 export { default as Module } from './Module';
+export { default as NoiseModule } from './modules/NoiseModule';
 export { Renderer } from './interfaces/Renderer';
 export { default as EmissionShape } from './EmissionShape';
 export { EmissionSource } from './enums/EmissionSource';

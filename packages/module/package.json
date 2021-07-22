@@ -17,6 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "eaz": "^1.0.2",
+    "fast-simplex-noise": "^4.0.0",
     "nanoid": "^3.1.23",
     "three": "^0.128.0"
   },

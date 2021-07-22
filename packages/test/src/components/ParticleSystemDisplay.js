@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
-import { ParticleSystem, Module } from 'rmps';
+import { ParticleSystem, NoiseModule } from 'rmps';
 
 function ParticleSystemDisplay() {
   const particleSystem = useRef(null);
@@ -10,12 +10,12 @@ function ParticleSystemDisplay() {
 
   useEffect(() => {
     particleSystem.current = new ParticleSystem();
+    particleSystem.current.emitters[0].initialValues.lifetime = 20;
     particleSystem.current.position.set(0, 1, 0);
 
-    particleSystem.current.modules.push(new Module((particle, dt) => {
-      particle.alpha = (1 - particle.time**3);
-      particle.scale = new THREE.Vector3(1, 1, 1).multiplyScalar(particle.time * 4);
-    }));
+    particleSystem.current.modules.push(new NoiseModule((particle, dt) => {
+      particle.scale = new THREE.Vector3(1, 1, 1).multiplyScalar(particle.data.noise * 4);
+    }, { frequency: 5 }));
 
     scene.add(particleSystem.current);
     console.log(particleSystem.current);
