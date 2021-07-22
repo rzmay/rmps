@@ -5,6 +5,7 @@ import { InitialParticleValues } from './interfaces/InitialParticleValues';
 import evaluateDynamicVector from './helpers/evaluateDynamicVector3';
 import evaluateDynamicNumber from './helpers/evaluateDynamicNumber';
 import evaluateDynamicColor from './helpers/evaluateDynamicColor';
+import { dynamicValue } from './types/dynamicValue';
 
 type SpawnBurst = {
     time: number,
@@ -15,7 +16,7 @@ type SpawnBurst = {
 class Emitter {
     source: EmissionShape;
 
-    rate: number;
+    rate: dynamicValue<number>;
 
     duration: number;
 
@@ -33,7 +34,7 @@ class Emitter {
       initialValues: Partial<InitialParticleValues> = {},
       source: EmissionShape = EmissionShape.Sphere,
       bursts: SpawnBurst[] = [],
-      rate = 50,
+      rate: dynamicValue<number> = 50,
       duration = 10,
       looping = true,
     ) {
@@ -46,16 +47,25 @@ class Emitter {
 
       this._lastSpawn = Date.now();
       this._startTime = Date.now();
+
+      document.addEventListener('visibilitychange', () => {
+        const now = Date.now();
+        if (now - this._lastSpawn > this.rate) {
+          const time = ((now - this._startTime) / (this.duration * 1000));
+          this._lastSpawn = Date.now() - evaluateDynamicNumber(this.initialValues.lifetime, time) * 1000;
+        }
+      });
     }
 
     update(particles: Particle[]) {
       const now = Date.now();
+      const time = ((now - this._startTime) / (this.duration * 1000));
 
       // Spawning
       if (now - this._startTime < this.duration * 1000) {
         // Rate
         const timeSinceLast = now - this._lastSpawn;
-        const secondsPerParticle = (1000 / this.rate);
+        const secondsPerParticle = (1000 / evaluateDynamicNumber(this.rate, time));
         const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
         for (let i = 0; i < particlesDue; i += 1) {
           this.spawnParticle(particles);

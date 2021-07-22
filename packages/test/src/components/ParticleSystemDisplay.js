@@ -9,7 +9,7 @@ function ParticleSystemDisplay() {
 
   useEffect(() => {
     particleSystem.current = new ParticleSystem();
-    particleSystem.current.emitters[0].initialValues.radial = 10;
+    particleSystem.current.emitters[0].rate = (time) => time * 50;
     particleSystem.current.position.set(0, 1, 0);
 
     particleSystem.current.modules.push(new NoiseModule((particle, dt) => {
