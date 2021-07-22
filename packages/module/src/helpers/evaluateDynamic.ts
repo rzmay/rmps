@@ -6,10 +6,10 @@ export default function evaluateDynamic<T>(
   time = 0,
 ): T {
   if (typeof value === 'function') {
-    return (value as ((t: number) => T))(time);
-  } if (Object.keys(value).includes('dynamicRange') && 'min' in value && 'max' in value) {
-    const min: T = evaluateDynamic(value.min, interpolate, time);
-    const max: T = evaluateDynamic(value.max, interpolate, time);
+    return evaluateDynamic((value as ((t: number) => T))(time), interpolate, time);
+  } if (Array.isArray(value)) {
+    const min: T = evaluateDynamic(value[0], interpolate, time);
+    const max: T = evaluateDynamic(value[1], interpolate, time);
 
     return interpolate(min, max, Math.random());
   }

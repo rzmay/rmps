@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useRef } from 'react';
-import PropTypes from 'prop-types';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { ParticleSystem, NoiseModule } from 'rmps';
@@ -10,12 +9,13 @@ function ParticleSystemDisplay() {
 
   useEffect(() => {
     particleSystem.current = new ParticleSystem();
-    particleSystem.current.emitters[0].initialValues.lifetime = 20;
+    particleSystem.current.emitters[0].initialValues.radial = 10;
     particleSystem.current.position.set(0, 1, 0);
 
     particleSystem.current.modules.push(new NoiseModule((particle, dt) => {
-      particle.scale = new THREE.Vector3(1, 1, 1).multiplyScalar(particle.data.noise * 4);
-    }, { frequency: 5 }));
+      particle.color = new THREE.Color(particle.data.noise, particle.data.noise4d, 1);
+      // particle.scale = new THREE.Vector3(1, 1, 1).multiplyScalar(particle.data.noise4d * 4);
+    }, { frequency: 1 }));
 
     scene.add(particleSystem.current);
     console.log(particleSystem.current);
@@ -27,11 +27,5 @@ function ParticleSystemDisplay() {
 
   return (<></>);
 }
-
-// ParticleSystem.propTypes = {
-//   width: PropTypes.number,
-//   length: PropTypes.number,
-//   material: PropTypes.any,
-// };
 
 export default ParticleSystemDisplay;
