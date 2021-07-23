@@ -1,4 +1,4 @@
-attribute vec3 scale;
+attribute vec4 scale;
 attribute vec3 rotation;
 attribute float frame;
 
