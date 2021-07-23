@@ -10,13 +10,13 @@ class EmissionShape {
       { side: THREE.DoubleSide },
     );
 
-    static readonly Box = new EmissionShape(new THREE.BoxBufferGeometry());
+    static Box(...args: any[]): EmissionShape { return new EmissionShape(new THREE.BoxBufferGeometry(...args)); }
 
-    static readonly Sphere = new EmissionShape(new THREE.SphereBufferGeometry());
+    static Sphere(...args: any[]): EmissionShape { return new EmissionShape(new THREE.SphereBufferGeometry(...args)); }
 
-    static readonly Cone = new EmissionShape(new THREE.ConeBufferGeometry());
+    static Cone(...args: any[]): EmissionShape { return new EmissionShape(new THREE.ConeBufferGeometry(...args)); }
 
-    static readonly Torus = new EmissionShape(new THREE.TorusBufferGeometry());
+    static Torus(...args: any[]): EmissionShape { return new EmissionShape(new THREE.TorusBufferGeometry(...args)); }
 
     source: EmissionSource;
 

@@ -4,9 +4,36 @@ import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/simple.png';
 import UnlitSprite from '../materials/UnlitSprite';
+import { dynamicValue } from '../types/dynamicValue';
+import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
+
+function mockSpriteCoord(coord: THREE.Vector2, frame: number, gridSize: THREE.Vector2) {
+  return new THREE.Vector2(
+    (coord.x / gridSize.x) + ((frame % gridSize.x) * (1.0 / gridSize.x)),
+    (coord.y / gridSize.y) + (Math.floor(frame / gridSize.x) * (1.0 / gridSize.y)),
+  );
+}
+
+interface SpriteRendererOptions {
+    fps: dynamicValue<number>;
+    tileSize: {x: number, y: number};
+    tileMargin: {x: number, y: number};
+    gridSize: {x: number, y: number};
+    frames: number;
+}
 
 class SpriteRenderer implements Renderer {
     texture: THREE.Texture;
+
+    frames = 1;
+
+    tileSize: THREE.Vector2 = new THREE.Vector2(0, 0);
+
+    tileMargin: THREE.Vector2 = new THREE.Vector2(0, 0);
+
+    gridSize: THREE.Vector2 = new THREE.Vector2(1, 1);
+
+    fps: dynamicValue<number> = 1;
 
     private material: THREE.Material;
 
@@ -14,8 +41,34 @@ class SpriteRenderer implements Renderer {
 
     private readonly points: THREE.Points;
 
-    constructor(texture: string | THREE.Texture = simple) {
-      this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture) : texture;
+    constructor(texture: string | THREE.Texture = simple, options: Partial<SpriteRendererOptions> = {}) {
+      this.texture = typeof texture === 'string' ? new THREE.TextureLoader().load(texture, (tex) => {
+        if (!options.tileSize) {
+          this.tileSize = new THREE.Vector2(
+            tex.image.naturalWidth / this.gridSize.x,
+            tex.image.naturalHeight / this.gridSize.y,
+          );
+        }
+
+        // Load
+        UnlitSprite(this.texture, {
+          frames: this.frames,
+          tileSize: this.tileSize,
+          tileMargin: this.tileMargin,
+          gridSize: this.gridSize,
+        }).then((material) => {
+          this.material = material;
+          this.points.material = this.material;
+        });
+      }) : texture;
+
+      this.fps = options.fps ?? 1;
+      this.tileSize = new THREE.Vector2(options.tileSize?.x, options.tileSize?.y);
+      this.tileMargin = new THREE.Vector2(options.tileMargin?.x, options.tileMargin?.y);
+      this.gridSize = new THREE.Vector2(options.gridSize?.x ?? 1, options.gridSize?.y ?? 1);
+
+      this.frames = options.frames ?? this.gridSize.x * this.gridSize.y;
+
       this.geometry = new THREE.BufferGeometry();
 
       // Preload
@@ -26,13 +79,8 @@ class SpriteRenderer implements Renderer {
         depthWrite: false,
         transparent: true,
       });
-      this.points = new THREE.Points(this.geometry, this.material);
 
-      // Load
-      UnlitSprite(this.texture).then((material) => {
-        this.material = material;
-        this.points.material = this.material;
-      });
+      this.points = new THREE.Points(this.geometry, this.material);
     }
 
     setup(system: ParticleSystem) {
@@ -74,6 +122,17 @@ class SpriteRenderer implements Renderer {
           ),
         ),
         4,
+      ));
+
+      this.geometry.setAttribute('frame', new THREE.BufferAttribute(
+        new Float32Array(
+          particles.flatMap(
+            (particle: Particle) => Math.floor(
+              particle.realtime * evaluateDynamicNumber(this.fps, particle.time),
+            ) % this.frames,
+          ),
+        ),
+        1,
       ));
     }
 }

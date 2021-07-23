@@ -32,7 +32,7 @@ class Emitter {
 
     constructor(
       initialValues: Partial<InitialParticleValues> = {},
-      source: EmissionShape = EmissionShape.Sphere,
+      source: EmissionShape = EmissionShape.Sphere(),
       bursts: SpawnBurst[] = [],
       rate: dynamicValue<number> = 50,
       duration = 10,

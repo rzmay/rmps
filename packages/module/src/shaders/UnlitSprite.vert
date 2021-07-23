@@ -1,9 +1,11 @@
 attribute vec3 scale;
 attribute vec3 rotation;
+attribute float frame;
 
 varying vec4 vColor;
 varying float aspectRatio;
 varying float angle;
+flat out int fragFrame;
 
 void main() {
 
@@ -18,5 +20,7 @@ void main() {
     gl_PointSize = max(scale.x, scale.y) * ( 300.0 / -mvPosition.z );
 
     gl_Position = projectionMatrix * mvPosition;
+
+    fragFrame = int(frame);
 
 }

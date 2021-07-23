@@ -5,6 +5,13 @@ import Module from './Module';
 import { Renderer } from './interfaces/Renderer';
 import acceptMultiple from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
+import { multiple } from './types/multiple';
+
+interface ParticleSystemOptions {
+    emitters: multiple<Emitter>;
+    renderers: multiple<Renderer>;
+    modules: multiple<Module>;
+}
 
 class ParticleSystem extends THREE.Object3D {
     particles: Particle[] = [];
@@ -19,16 +26,12 @@ class ParticleSystem extends THREE.Object3D {
 
     private lastFrame: number;
 
-    constructor(
-      emitter: Emitter | Emitter[] = new Emitter({ radial: 1 }),
-      renderer: Renderer | Renderer[] = new SpriteRenderer(),
-      modules: Module | Module[] = [],
-    ) {
+    constructor(options: Partial<ParticleSystemOptions> = {}) {
       super();
 
-      this.emitters = acceptMultiple(emitter);
-      this.renderers = acceptMultiple(renderer);
-      this.modules = acceptMultiple(modules);
+      this.emitters = acceptMultiple(options.emitters ?? new Emitter({ radial: 1 }));
+      this.renderers = acceptMultiple(options.renderers ?? new SpriteRenderer());
+      this.modules = acceptMultiple(options.modules ?? []);
 
       this.lastFrame = Date.now();
 
