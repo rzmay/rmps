@@ -3,6 +3,13 @@ import { Renderer } from '../interfaces/Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 
+interface LightRendererOptions {
+    brightness: number;
+    groupingRadiusRatio: number;
+    decay: number;
+    count: number;
+}
+
 class LightRenderer implements Renderer {
     lights: THREE.PointLight[] = [];
 
@@ -16,19 +23,14 @@ class LightRenderer implements Renderer {
 
     private _system: ParticleSystem | undefined;
 
-    constructor(
-      brightness = 1,
-      groupingRadiusRatio = 0.25,
-      decay = 2,
-      count = 50,
-    ) {
-      this.brightness = brightness;
-      this.groupingRadiusRatio = groupingRadiusRatio;
-      this.decay = decay;
+    constructor(options: Partial<LightRendererOptions> = {}) {
+      this.brightness = options.brightness ?? 1;
+      this.groupingRadiusRatio = options.groupingRadiusRatio ?? 0.25;
+      this.decay = options.decay ?? 2;
 
       // Start with lights to reduce initialization lag
-      for (let i = 0; i < count; i += 1) {
-        const light = new THREE.PointLight(0x000000, 0, 0, decay);
+      for (let i = 0; i < (options.count ?? 50); i += 1) {
+        const light = new THREE.PointLight(0x000000, 0, 0, this.decay);
         this.lights.push(light);
         this.lightContainer.add(light);
       }

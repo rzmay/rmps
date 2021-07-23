@@ -7,13 +7,6 @@ import UnlitSprite from '../materials/UnlitSprite';
 import { dynamicValue } from '../types/dynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 
-function mockSpriteCoord(coord: THREE.Vector2, frame: number, gridSize: THREE.Vector2) {
-  return new THREE.Vector2(
-    (coord.x / gridSize.x) + ((frame % gridSize.x) * (1.0 / gridSize.x)),
-    (coord.y / gridSize.y) + (Math.floor(frame / gridSize.x) * (1.0 / gridSize.y)),
-  );
-}
-
 interface SpriteRendererOptions {
     fps: dynamicValue<number>;
     tileSize: {x: number, y: number};
@@ -53,8 +46,6 @@ class SpriteRenderer implements Renderer {
         // Load
         UnlitSprite(this.texture, {
           frames: this.frames,
-          tileSize: this.tileSize,
-          tileMargin: this.tileMargin,
           gridSize: this.gridSize,
         }).then((material) => {
           this.material = material;

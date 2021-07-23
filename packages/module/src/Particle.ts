@@ -1,6 +1,15 @@
 import { nanoid } from 'nanoid';
 import * as THREE from 'three';
 
+interface ParticleOptions {
+    position: THREE.Vector3;
+    rotation: THREE.Vector3;
+    scale: THREE.Vector3;
+    color: THREE.Color;
+    alpha: number;
+    lifetime: number;
+}
+
 class Particle {
     position: THREE.Vector3;
 
@@ -39,22 +48,15 @@ class Particle {
     // Used to store custom data for special components
     data: any;
 
-    constructor(
-      position: THREE.Vector3,
-      rotation: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
-      scale: THREE.Vector3 = new THREE.Vector3(1, 1, 1),
-      color: THREE.Color = new THREE.Color(0xffffff),
-      alpha = 1,
-      lifetime = 5,
-    ) {
-      this.position = position;
-      this.rotation = rotation;
-      this.scale = scale;
-      this.color = color;
-      this.alpha = alpha;
+    constructor(options: Partial<ParticleOptions> = {}) {
+      this.position = options.position ?? new THREE.Vector3();
+      this.rotation = options.rotation ?? new THREE.Vector3();
+      this.scale = options.scale ?? new THREE.Vector3(1, 1, 1);
+      this.color = options.color ?? new THREE.Color(0xffffff);
+      this.alpha = options.alpha ?? 1;
 
+      this.lifetime = options.lifetime ?? 5;
       this.startTime = Date.now();
-      this.lifetime = lifetime;
       this.time = 0;
       this.realtime = 0;
 

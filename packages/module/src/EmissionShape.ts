@@ -3,6 +3,11 @@ import { BufferAttribute } from 'three';
 import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler';
 import { EmissionSource } from './enums/EmissionSource';
 
+interface EmissionShapeOptions {
+    geometry: THREE.BufferGeometry;
+    source: EmissionSource;
+}
+
 class EmissionShape {
     static maxVolumeIterations = 5;
 
@@ -10,13 +15,21 @@ class EmissionShape {
       { side: THREE.DoubleSide },
     );
 
-    static Box(...args: any[]): EmissionShape { return new EmissionShape(new THREE.BoxBufferGeometry(...args)); }
+    static Box(...args: any[]): EmissionShape {
+      return new EmissionShape({ geometry: new THREE.BoxBufferGeometry(...args) });
+    }
 
-    static Sphere(...args: any[]): EmissionShape { return new EmissionShape(new THREE.SphereBufferGeometry(...args)); }
+    static Sphere(...args: any[]): EmissionShape {
+      return new EmissionShape({ geometry: new THREE.SphereBufferGeometry(...args) });
+    }
 
-    static Cone(...args: any[]): EmissionShape { return new EmissionShape(new THREE.ConeBufferGeometry(...args)); }
+    static Cone(...args: any[]): EmissionShape {
+      return new EmissionShape({ geometry: new THREE.ConeBufferGeometry(...args) });
+    }
 
-    static Torus(...args: any[]): EmissionShape { return new EmissionShape(new THREE.TorusBufferGeometry(...args)); }
+    static Torus(...args: any[]): EmissionShape {
+      return new EmissionShape({ geometry: new THREE.TorusBufferGeometry(...args) });
+    }
 
     source: EmissionSource;
 
@@ -30,12 +43,9 @@ class EmissionShape {
 
     private _mesh: THREE.Mesh;
 
-    constructor(
-      geometry: THREE.BufferGeometry = new THREE.SphereBufferGeometry(),
-      source: EmissionSource = EmissionSource.Volume,
-    ) {
-      this._geometry = geometry;
-      this.source = source;
+    constructor(options: Partial<EmissionShapeOptions> = {}) {
+      this._geometry = options.geometry ?? new THREE.SphereBufferGeometry();
+      this.source = options.source ?? EmissionSource.Volume;
 
       this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
       this._surfaceSampler = new MeshSurfaceSampler(this._mesh)

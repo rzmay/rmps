@@ -3,6 +3,11 @@ import { Renderer } from '../interfaces/Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 
+interface MeshRendererOptions {
+    mesh: THREE.Mesh;
+    maxParticles: number;
+}
+
 class MeshRenderer implements Renderer {
     mesh: THREE.Mesh;
 
@@ -10,16 +15,13 @@ class MeshRenderer implements Renderer {
 
     private dummy: THREE.Object3D;
 
-    constructor(
-      mesh: THREE.Mesh = new THREE.Mesh(
+    constructor(options: Partial<MeshRendererOptions> = {}) {
+      this.mesh = options.mesh ?? new THREE.Mesh(
         new THREE.SphereBufferGeometry(),
         new THREE.MeshStandardMaterial(),
-      ),
-      maxParticles = 10000,
-    ) {
-      this.mesh = mesh;
+      );
 
-      this.instances = new THREE.InstancedMesh(mesh.geometry, mesh.material, maxParticles);
+      this.instances = new THREE.InstancedMesh(this.mesh.geometry, this.mesh.material, options.maxParticles ?? 10000);
       this.instances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
 
       this.dummy = new THREE.Object3D();

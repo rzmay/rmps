@@ -20,12 +20,10 @@ class NoiseModule extends Module {
 
     private noiseGenerator = makeNoise4D();
 
-    constructor(modify: ((particle: Particle, deltaTime: number) => void), options: Partial<NoiseModuleParams>) {
-      super((particle: Particle, deltaTime: number) => {
+    constructor(options: Partial<NoiseModuleParams>) {
+      super((particle: Particle) => {
         particle.data.noise = this.generateNoise(particle);
         particle.data.noise4d = this.generateNoise(particle, true);
-
-        modify(particle, deltaTime);
       });
 
       this.octaves = options?.octaves ?? this.octaves;

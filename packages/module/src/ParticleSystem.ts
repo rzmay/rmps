@@ -29,7 +29,7 @@ class ParticleSystem extends THREE.Object3D {
     constructor(options: Partial<ParticleSystemOptions> = {}) {
       super();
 
-      this.emitters = acceptMultiple(options.emitters ?? new Emitter({ radial: 1 }));
+      this.emitters = acceptMultiple(options.emitters ?? new Emitter());
       this.renderers = acceptMultiple(options.renderers ?? new SpriteRenderer());
       this.modules = acceptMultiple(options.modules ?? []);
 
