@@ -20,6 +20,7 @@ function ParticleSystemDisplay() {
     particleSystem.current.modules.push(new Module((particle, dt) => {
       particle.scale = new THREE.Vector3(1, 1, 1).multiplyScalar(particle.data.noise * 4 * (particle.time + 1));
       particle.alpha = -((2 * particle.time - 1) ** 4) + 1;
+      if (particle.data.noise > 1 || particle.data.noise < 0) console.log(particle);
     }));
 
     scene.add(particleSystem.current);

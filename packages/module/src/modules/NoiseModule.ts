@@ -20,32 +20,41 @@ class NoiseModule extends Module {
 
     private noiseGenerator = makeNoise4D();
 
-    constructor(options: Partial<NoiseModuleParams>) {
+    constructor(options: Partial<NoiseModuleParams> = {}) {
       super((particle: Particle) => {
         particle.data.noise = this.generateNoise(particle);
         particle.data.noise4d = this.generateNoise(particle, true);
       });
 
-      this.octaves = options?.octaves ?? this.octaves;
-      this.frequency = options?.frequency ?? this.frequency;
-      this.lacunarity = options?.lacunarity ?? this.lacunarity;
-      this.persistence = options?.persistence ?? this.persistence;
+      this.octaves = options.octaves ?? this.octaves;
+      this.frequency = options.frequency ?? this.frequency;
+      this.lacunarity = options.lacunarity ?? this.lacunarity;
+      this.persistence = options.persistence ?? this.persistence;
     }
 
     private generateNoise(particle: Particle, w = false): number {
-      let result = 0;
+      const layers = [];
       for (let i = 0; i < this.octaves; i += 1) {
         const frequency = this.frequency * (this.lacunarity ** i);
         const amplitude = this.persistence ** i;
-        result += (this.noiseGenerator(
+
+        // Clamp because float math is nuts
+        const rawNoise = Math.min(Math.max((this.noiseGenerator(
           particle.position.x * frequency,
           particle.position.y * frequency,
           particle.position.z * frequency,
           w ? particle.time : 0,
-        ) + 1) * 0.5 * amplitude;
+        ) + 1) / 2, 0), 1);
+
+        layers.push({
+          value: rawNoise * amplitude,
+          weight: amplitude,
+        });
       }
 
-      return result;
+      // Use weighted average to maintain 0 - 1 range
+      return layers.map((layer) => layer.value).reduce((a, b) => a + b)
+          / layers.map((layer) => layer.weight).reduce((a, b) => a + b);
     }
 }
 
