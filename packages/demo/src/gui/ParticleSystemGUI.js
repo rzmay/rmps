@@ -2,7 +2,30 @@ import GUI from 'lil-gui';
 import * as THREE from 'three';
 
 // Replace this module specifier with the actual npm package name.
-import { Emitter, EmissionShape, EmissionSource, NoiseModule, VelocityOverLifetime, ForceOverLifetime, LimitVelocityOverLifetime, TransformByNoise, ColorOverLifetime, ColorBySpeed, SizeOverLifetime, SizeBySpeed, RotationOverLifetime, RotationBySpeed, ExternalForces, SpriteRenderer, MeshRenderer, LightRenderer, } from '../../../rmps/build';
+import {
+    Emitter,
+    EmissionShape,
+    EmissionSource,
+    NoiseModule,
+    VelocityOverLifetime,
+    ForceOverLifetime,
+    LimitVelocityOverLifetime,
+    TransformByNoise,
+    ColorOverLifetime,
+    ColorBySpeed,
+    SizeOverLifetime,
+    SizeBySpeed,
+    RotationOverLifetime,
+    RotationBySpeed,
+    ExternalForces,
+    SpriteRenderer,
+    MeshRenderer,
+    LightRenderer,
+    TrailRenderer,
+    TrailMode,
+    TrailTextureMode,
+} from '../../../rmps/build';
+
 const INITIAL_VALUE_DEFAULTS = {
     lifetime: () => 1,
     speed: () => 1,
@@ -38,6 +61,7 @@ const DEFAULT_RENDERER_FACTORIES = {
     Sprite: () => new SpriteRenderer(),
     Mesh: () => new MeshRenderer(),
     Light: () => new LightRenderer(),
+    Trail: () => new TrailRenderer(),
 };
 export class ParticleSystemGUI {
     constructor(options) {
@@ -370,16 +394,23 @@ export class ParticleSystemGUI {
     buildRenderer(folder, renderer, index) {
         if (renderer instanceof SpriteRenderer) {
             this.buildSpriteRenderer(folder, renderer);
-        }
-        else if (renderer instanceof LightRenderer) {
+        } else if (renderer instanceof LightRenderer) {
             this.buildLightRenderer(folder, renderer);
-        }
-        else if (renderer instanceof MeshRenderer) {
+        } else if (renderer instanceof MeshRenderer) {
             this.buildMeshRenderer(folder, renderer);
+        } else if (renderer instanceof TrailRenderer) {
+            this.buildTrailRenderer(folder, renderer);
+        } else {
+            this.addObject(folder, renderer, new Set([
+                'setup',
+                'update',
+                'destroy',
+                'mesh',
+                'geometry',
+                'material',
+            ]));
         }
-        else {
-            this.addObject(folder, renderer, new Set(['setup', 'update']));
-        }
+
         const actions = {
             remove: () => {
                 renderer.destroy();
@@ -453,12 +484,220 @@ export class ParticleSystemGUI {
         folder.add(info, 'material').name('Material').disable();
         folder.add(info, 'capacity').name('Capacity').disable();
     }
-    addObject(folder, object, hidden = new Set()) {
-        Object.keys(object)
-            .filter((key) => !key.startsWith('_') && !hidden.has(key))
-            .forEach((key) => this.addValue(folder, object, key, this.prettyName(key)));
+    buildTrailRenderer(folder, renderer) {
+        const modeState = {
+            mode: renderer.mode,
+        };
+
+        folder.add(modeState, 'mode', {
+            Particle: TrailMode.Particle,
+            Ribbon: TrailMode.Ribbon,
+        }).name('Mode').onChange((value) => {
+            renderer.mode = Number(value);
+            this.rebuild();
+        });
+
+        folder.add(renderer, 'ratio', 0, 1).name('Ratio');
+
+        this.addDynamicValue(
+            folder,
+            renderer,
+            'lifetime',
+            'Lifetime',
+        );
+
+        folder
+            .add(renderer, 'minimumVertexDistance', 0)
+            .name('Minimum Vertex Distance');
+
+        folder
+            .add(renderer, 'dieWithParticles')
+            .name('Die With Particles');
+
+        if (renderer.mode === TrailMode.Ribbon) {
+            folder
+                .add(renderer, 'ribbonCount', 1)
+                .step(1)
+                .name('Ribbon Count');
+        }
+
+        const textureState = {
+            textureMode: renderer.textureMode,
+        };
+
+        folder.add(textureState, 'textureMode', {
+            Stretch: TrailTextureMode.Stretch,
+            Tile: TrailTextureMode.Tile,
+            'Repeat Per Segment': TrailTextureMode.RepeatPerSegment,
+            'Distribute Per Segment': TrailTextureMode.DistributePerSegment,
+        }).name('Texture Mode').onChange((value) => {
+            renderer.textureMode = Number(value);
+        });
+
+        this.addDynamicValue(
+            folder,
+            renderer,
+            'width',
+            'Width',
+        );
+
+        this.addDynamicValue(
+            folder,
+            renderer,
+            'widthOverTrail',
+            'Width Over Trail',
+        );
+
+        folder
+            .add(renderer, 'sizeAffectsWidth')
+            .name('Size Affects Width');
+
+        folder
+            .add(renderer, 'sizeAffectsLifetime')
+            .name('Size Affects Lifetime');
+
+        folder
+            .add(renderer, 'inheritParticleColor')
+            .name('Inherit Particle Color');
+
+        this.addDynamicValue(
+            folder,
+            renderer,
+            'colorOverLifetime',
+            'Color Over Lifetime',
+        );
+
+        this.addDynamicValue(
+            folder,
+            renderer,
+            'colorOverTrail',
+            'Color Over Trail',
+        );
+
+        this.buildTrailMaterialFolder(
+            folder.addFolder('Material'),
+            renderer,
+        );
     }
-    addValue(folder, object, key, label) {
+    buildTrailMaterialFolder(folder, renderer) {
+        const materials = Array.isArray(renderer.material)
+            ? renderer.material
+            : [renderer.material];
+
+        const material = materials[0];
+
+        if (!material) {
+            return;
+        }
+
+        const info = {
+            type: material.type,
+        };
+
+        folder
+            .add(info, 'type')
+            .name('Type')
+            .disable();
+
+        if ('color' in material && material.color instanceof THREE.Color) {
+            const state = {
+                color: `#${material.color.getHexString()}`,
+            };
+
+            folder
+                .addColor(state, 'color')
+                .name('Color')
+                .onChange((value) => {
+                    material.color.set(value);
+                });
+        }
+
+        if ('opacity' in material) {
+            folder
+                .add(material, 'opacity', 0, 1)
+                .name('Opacity');
+        }
+
+        if ('roughness' in material) {
+            folder
+                .add(material, 'roughness', 0, 1)
+                .name('Roughness');
+        }
+
+        if ('metalness' in material) {
+            folder
+                .add(material, 'metalness', 0, 1)
+                .name('Metalness');
+        }
+
+        if (
+            'emissive' in material
+            && material.emissive instanceof THREE.Color
+        ) {
+            const state = {
+                emissive: `#${material.emissive.getHexString()}`,
+            };
+
+            folder
+                .addColor(state, 'emissive')
+                .name('Emissive')
+                .onChange((value) => {
+                    material.emissive.set(value);
+                });
+        }
+
+        if ('emissiveIntensity' in material) {
+            folder
+                .add(material, 'emissiveIntensity', 0)
+                .name('Emissive Intensity');
+        }
+
+        if ('wireframe' in material) {
+            folder
+                .add(material, 'wireframe')
+                .name('Wireframe');
+        }
+    }
+    addObject(
+        folder,
+        object,
+        hidden = new Set(),
+        seen = new WeakSet(),
+    ) {
+        if (
+            !object
+            || typeof object !== 'object'
+            || seen.has(object)
+        ) {
+            return;
+        }
+
+        seen.add(object);
+
+        Object.keys(object)
+            .filter(
+                (key) =>
+                    !key.startsWith('_')
+                    && !hidden.has(key)
+            )
+            .forEach(
+                (key) =>
+                    this.addValue(
+                        folder,
+                        object,
+                        key,
+                        this.prettyName(key),
+                        seen,
+                    )
+            );
+    }
+    addValue(
+        folder,
+        object,
+        key,
+        label,
+        seen = new WeakSet(),
+    ) {
         const value = object[key];
         if (typeof value === 'function') {
             const state = { value: 'ƒ(t) — function driven' };
@@ -479,12 +718,36 @@ export class ParticleSystemGUI {
             return;
         }
         if (Array.isArray(value)) {
-            const arrayFolder = folder.addFolder(label);
-            value.forEach((_, index) => this.addValue(arrayFolder, value, String(index), index === 0 ? 'Min / 0' : 'Max / 1'));
+            const arrayFolder =
+                folder.addFolder(label);
+
+            value.forEach(
+                (_, index) =>
+                    this.addValue(
+                        arrayFolder,
+                        value,
+                        String(index),
+                        index === 0
+                            ? 'Min / 0'
+                            : 'Max / 1',
+                        seen,
+                    )
+            );
+
             return;
         }
         if (value && typeof value === 'object') {
-            this.addObject(folder.addFolder(label), value);
+            if (seen.has(value)) {
+                return;
+            }
+
+            this.addObject(
+                folder.addFolder(label),
+                value,
+                new Set(),
+                seen,
+            );
+
             return;
         }
         if (typeof value === 'number') {
@@ -656,6 +919,27 @@ export class ParticleSystemGUI {
         if (renderer instanceof MeshRenderer) {
             return `new MeshRenderer({\n  mesh: ${this.serializeMesh(renderer.mesh)},\n  maxParticles: ${renderer.instances.instanceMatrix.count},\n})`;
         }
+        if (renderer instanceof TrailRenderer) {
+            return [
+                'new TrailRenderer({',
+                `  mode: ${this.serializeValue(renderer.mode)},`,
+                `  ratio: ${this.serializeValue(renderer.ratio)},`,
+                `  lifetime: ${this.serializeValue(renderer.lifetime)},`,
+                `  minimumVertexDistance: ${this.serializeValue(renderer.minimumVertexDistance)},`,
+                `  dieWithParticles: ${this.serializeValue(renderer.dieWithParticles)},`,
+                `  ribbonCount: ${this.serializeValue(renderer.ribbonCount)},`,
+                `  textureMode: ${this.serializeValue(renderer.textureMode)},`,
+                `  width: ${this.serializeValue(renderer.width)},`,
+                `  widthOverTrail: ${this.serializeValue(renderer.widthOverTrail)},`,
+                `  sizeAffectsWidth: ${this.serializeValue(renderer.sizeAffectsWidth)},`,
+                `  sizeAffectsLifetime: ${this.serializeValue(renderer.sizeAffectsLifetime)},`,
+                `  inheritParticleColor: ${this.serializeValue(renderer.inheritParticleColor)},`,
+                `  colorOverLifetime: ${this.serializeValue(renderer.colorOverLifetime)},`,
+                `  colorOverTrail: ${this.serializeValue(renderer.colorOverTrail)},`,
+                `  materialOptions: ${this.serializeMaterialOptions(renderer.material)},`,
+                '})',
+            ].join('\n');
+        }
         return `new ${renderer.constructor.name}(${this.serializeValue(renderer)})`;
     }
     serializeMesh(mesh) {
@@ -672,16 +956,62 @@ export class ParticleSystemGUI {
         return `new THREE.Mesh(${geometryExpression}, ${materialExpression})`;
     }
     serializeMaterialOptions(material) {
-        const candidate = material;
+        if (!material) {
+            return '{}';
+        }
+
         const options = {};
-        if (candidate.color)
-            options.color = candidate.color;
-        if (candidate.opacity !== undefined && candidate.opacity !== 1)
-            options.opacity = candidate.opacity;
-        if (candidate.transparent)
+
+        if (material.color) {
+            options.color = material.color;
+        }
+
+        if (
+            material.opacity !== undefined
+            && material.opacity !== 1
+        ) {
+            options.opacity = material.opacity;
+        }
+
+        if (material.transparent) {
             options.transparent = true;
-        if (candidate.wireframe)
+        }
+
+        if (material.wireframe) {
             options.wireframe = true;
+        }
+
+        if (material.roughness !== undefined) {
+            options.roughness = material.roughness;
+        }
+
+        if (material.metalness !== undefined) {
+            options.metalness = material.metalness;
+        }
+
+        if (material.emissive) {
+            options.emissive = material.emissive;
+        }
+
+        if (
+            material.emissiveIntensity !== undefined
+            && material.emissiveIntensity !== 1
+        ) {
+            options.emissiveIntensity =
+                material.emissiveIntensity;
+        }
+
+        if (
+            material.side !== undefined
+            && material.side !== THREE.FrontSide
+        ) {
+            options.side = material.side;
+        }
+
+        if (!material.depthWrite) {
+            options.depthWrite = false;
+        }
+
         return this.serializeValue(options);
     }
     serializeTexture(texture) {

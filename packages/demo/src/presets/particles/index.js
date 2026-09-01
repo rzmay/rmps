@@ -2,6 +2,8 @@ import createAdditiveSmoke from './additiveSmoke';
 import createCubes from './cubes';
 import createFire from './fire';
 import createFireball from './fireball';
+import createParticleTrail from './particleTrail';
+import createRibbonTrail from './ribbonTrail';
 import createSmoke from './smoke';
 import createSnow from './snow';
 import createSpheres from './spheres';
@@ -18,6 +20,8 @@ const particlePresets = {
   Spheres: createSpheres,
   "Cube Instances": createCubes,
   "Suzanne Instances": createSuzannes,
+  "Particle Trail": createParticleTrail,
+  "Ribbon Trail": createRibbonTrail,
 };
 
 export default particlePresets;

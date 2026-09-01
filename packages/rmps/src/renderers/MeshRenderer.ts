@@ -12,7 +12,7 @@ import Particle from '../Particle';
   * mesh will take precedent over geometry, material, and materialOptions.
   * material will take precedent over materialOptions.
 */
-interface MeshRendererOptions {
+export interface MeshRendererOptions {
     mesh: THREE.Mesh;
     maxParticles: number;
     geometry: THREE.BufferGeometry,

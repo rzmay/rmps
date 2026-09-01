@@ -68,7 +68,6 @@ class SpriteRenderer extends Renderer {
         );
       }
     }) : texture;
-    this.texture.generateMipmaps = false;
 
     this.fps = options.fps ?? 1;
     this.alphaMap = typeof options.alphaMap === 'string'

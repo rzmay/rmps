@@ -26,7 +26,6 @@ class SpriteRenderer extends Renderer {
                 this.tileSize = new THREE.Vector2(tex.image.naturalWidth / this.gridSize.x, tex.image.naturalHeight / this.gridSize.y);
             }
         }) : texture;
-        this.texture.generateMipmaps = false;
         this.fps = (_a = options.fps) !== null && _a !== void 0 ? _a : 1;
         this.alphaMap = typeof options.alphaMap === 'string'
             ? textureLoader.load(options.alphaMap)

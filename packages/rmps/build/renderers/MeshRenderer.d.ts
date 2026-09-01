@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Renderer } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
-interface MeshRendererOptions {
+export interface MeshRendererOptions {
     mesh: THREE.Mesh;
     maxParticles: number;
     geometry: THREE.BufferGeometry;
