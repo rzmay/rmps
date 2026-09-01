@@ -1,0 +1,38 @@
+{
+  "name": "rmps",
+  "version": "1.0.0",
+  "description": "🧅 Modular and extendable particle system for Three.js",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc && npm run build:shaders && npm run copy:assets && npm run fix:shader-imports",
+    "build:shaders": "node scripts/build-shaders.mjs",
+    "copy:assets": "mkdir -p build && rm -rf build/assets && cp -r src/assets build/assets",
+    "fix:shader-imports": "node scripts/fix-shader-imports.mjs",
+    "dev": "concurrently -k \"tsc --watch\" \"watch 'npm run build:shaders && npm run fix:shader-imports' src/shaders\" \"watch 'npm run copy:assets' src/assets\""
+  },
+  "author": "Robert May",
+  "license": "MIT",
+  "dependencies": {
+    "fast-simplex-noise": "^4.0.0",
+    "nanoid": "^3.1.23",
+    "seedrandom": "^3.0.5"
+  },
+  "peerDependencies": {
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@types/seedrandom": "^3.0.8",
+    "@types/three": "^0.185.4",
+    "@typescript-eslint/eslint-plugin": "^4.23.0",
+    "concurrently": "^6.1.0",
+    "eslint": "^7.26.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "three": "^0.185.1",
+    "typescript": "5.9",
+    "watch": "^0.13.0"
+  }
+}

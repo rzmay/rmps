@@ -1,0 +1,71 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import {
+  ColorOverLifetime,
+  Emitter,
+  EmissionShape,
+  MeshRenderer,
+  ParticleSystem,
+  SizeOverLifetime,
+  SpriteRenderer,
+  TransformByNoise,
+  EmissionSource,
+} from 'rmps';
+import circleSprite from 'url:../../assets/images/circle.png';
+import suzanneModel from 'url:../../assets/models/suzanne.glb';
+import { curvePresets } from '../curvePresets';
+
+
+export default async function createSuzanne() {
+  const gltf = await new GLTFLoader().loadAsync(suzanneModel);
+
+  let suzanneGeometry = null;
+  gltf.scene.traverse((child) => {
+    if (!suzanneGeometry && child.isMesh) {
+      suzanneGeometry = child.geometry.clone();
+      suzanneGeometry.rotateX(-90);
+    }
+  });
+
+  if (!suzanneGeometry) {
+    throw new Error('suzanne.glb does not contain a mesh');
+  }
+
+  const suzanne = new ParticleSystem({
+    emitters: [
+      new Emitter({
+        source: new EmissionShape({
+          geometry: suzanneGeometry,
+          source: EmissionSource.Surface
+        }),
+        rate: 256,
+        duration: 10,
+        looping: true,
+        initialValues: {
+          lifetime: 2.2,
+          speed: 0,
+          scale: new THREE.Vector3(0.45, 0.45, 0.45),
+          color: new THREE.Color('#70d6ff'),
+          alpha: 0.85,
+          velocity: new THREE.Vector3(0, 0, 0),
+          radial: 1.1,
+        },
+      }),
+    ],
+    modules: [
+      new ColorOverLifetime({
+        color: new THREE.Color('#70d6ff'),
+        alpha: (time) => curvePresets.fadeOut.evaluate(time),
+      }),
+    ],
+    renderers: [
+      new SpriteRenderer(circleSprite, {
+        material: 'basic',
+      }),
+    ],
+  });
+
+  suzanne.name = 'Suzanne';
+  suzanne.position.set(0, 2.2, 0);
+  return suzanne;
+}

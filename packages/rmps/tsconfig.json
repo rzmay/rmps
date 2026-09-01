@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": [
+      "es2019",
+      "esnext.array",
+      "dom"
+    ],
+    "module": "esnext",
+    "declaration": true,
+    "rootDir": "./src",
+    "outDir": "./build",
+    "types": [],
+    "strict": true,
+    "moduleResolution": "bundler"
+  }
+}

@@ -1,8 +1,13 @@
 {
-  "name": "RMPS",
+  "name": "RMPS Monorepo",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "@parcel/packager-raw-url": "^2.16.4",
+    "@parcel/transformer-glsl": "^2.16.4",
+    "@parcel/transformer-webmanifest": "^2.16.4"
+  }
 }

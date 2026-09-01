@@ -1,0 +1,41 @@
+import * as THREE from 'three';
+import unlitSpriteVert from '../shaders/UnlitSprite.vert';
+import unlitSpriteFrag from '../shaders/UnlitSprite.frag';
+
+export interface UnlitSpriteOptions {
+  gridSize: {x: number, y: number};
+  frames: number;
+  alphaMap: THREE.Texture;
+}
+
+const UnlitSprite = (
+  texture: THREE.Texture, options: Partial<UnlitSpriteOptions> = {},
+) => {
+  const {
+    gridSize,
+    frames,
+    alphaMap,
+    ...materialOptions
+  } = options;
+
+  return new THREE.ShaderMaterial({
+    vertexShader: unlitSpriteVert,
+    fragmentShader: unlitSpriteFrag,
+    uniforms: {
+      pointTexture: { value: texture },
+      gridSize: { value: gridSize ?? { x: 1, y: 1 } },
+      n_frames: { value: frames ?? 1 },
+      alphaMap: { value: alphaMap ?? null },
+      hasAlphaMap: { value: Boolean(alphaMap) },
+    },
+
+    depthTest: true,
+    depthWrite: false,
+    transparent: true,
+    vertexColors: true,
+
+    ...materialOptions,
+  });
+};
+
+export default UnlitSprite;
