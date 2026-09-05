@@ -23,6 +23,8 @@ export interface SpriteRendererOptions {
     alphaMap: string | THREE.Texture;
     material: 'unlit' | 'basic';
     materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
+    castShadow: boolean;
+    softParticleDistance: number;
 }
 declare class SpriteRenderer extends Renderer {
     texture: THREE.Texture;
@@ -33,7 +35,8 @@ declare class SpriteRenderer extends Renderer {
     tileMargin: THREE.Vector2;
     gridSize: THREE.Vector2;
     fps: DynamicValue<number>;
-    private system?;
+    castShadow: boolean;
+    softParticleDistance: number;
     private material;
     private _materialOptions;
     get materialOptions(): BasicSpriteOptions | UnlitSpriteOptions | undefined;
@@ -45,10 +48,12 @@ declare class SpriteRenderer extends Renderer {
     private readonly points;
     constructor(texture?: string | THREE.Texture, options?: Partial<SpriteRendererOptions>);
     setup(system: ParticleSystem): void;
-    update(particles: Particle[]): void;
+    update(particles: Particle[], system: ParticleSystem): void;
+    private updateAttributes;
     destroy(): void;
     private loadMaterial;
     private updateEnvironmentMap;
     private setEnvironmentMap;
+    private getSceneDepth;
 }
 export default SpriteRenderer;

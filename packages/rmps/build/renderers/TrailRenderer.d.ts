@@ -30,6 +30,8 @@ export interface TrailRendererOptions {
     colorOverTrail: DynamicValue<THREE.Color>;
     material: THREE.Material;
     materialOptions: THREE.MeshStandardMaterialParameters;
+    castShadow: boolean;
+    receiveShadow: boolean;
 }
 declare class TrailRenderer extends Renderer {
     mode: TrailMode;
@@ -49,6 +51,8 @@ declare class TrailRenderer extends Renderer {
     geometry: THREE.BufferGeometry;
     material: THREE.Material | THREE.Material[];
     mesh: THREE.Mesh;
+    castShadow: boolean;
+    receiveShadow: boolean;
     private particles;
     private trails;
     private camera?;

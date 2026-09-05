@@ -10,6 +10,7 @@ export default function loadCheckerboard(scene) {
   const ambient = new THREE.AmbientLight(0xffffff, 0.25);
   const point = new THREE.PointLight(0xffffff, 200);
   point.position.set(10, 20, 0);
+  point.castShadow = true;
 
   const pixels = new Uint8Array([
     230, 230, 230, 255,
@@ -31,6 +32,7 @@ export default function loadCheckerboard(scene) {
   });
   const floor = new THREE.Mesh(floorGeometry, floorMaterial);
   floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
 
   scene.add(ambient, point, floor);
 

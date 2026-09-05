@@ -46,7 +46,6 @@ declare class LightRenderer extends Renderer {
     private _getIntensity;
     private _getDistance;
     private _getLightParticles;
-    private _getParticleRatioValue;
     private _getParticleGroups;
     private _getGroupingRadius;
     private _syncLightCount;

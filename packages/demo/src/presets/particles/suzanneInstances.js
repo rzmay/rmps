@@ -42,21 +42,16 @@ export default async function createSuzannes() {
         rate: 12,
         duration: 10,
         looping: true,
-
+        radialSpeed: 1,
+        alignment: 1,
         initialValues: {
           lifetime: [4, 8],
           speed: 1,
-
           color: colors,
-
           scale: [
             new THREE.Vector3(0.4, 0.4, 0.4),
             new THREE.Vector3(1.0, 1.0, 1.0),
           ],
-
-          radial: 1,
-          alignment: 1,
-
           alpha: 1,
         },
       }),
@@ -73,7 +68,9 @@ export default async function createSuzannes() {
         mesh: new THREE.Mesh(
           suzanneGeometry,
           new THREE.MeshStandardMaterial()
-        )
+        ),
+        castShadow: true,
+        receiveShadow: true,
       }),
     ],
   });

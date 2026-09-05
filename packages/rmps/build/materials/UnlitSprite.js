@@ -13,13 +13,15 @@ import * as THREE from 'three';
 import unlitSpriteVert from '../shaders/UnlitSprite.vert.js';
 import unlitSpriteFrag from '../shaders/UnlitSprite.frag.js';
 const UnlitSprite = (texture, options = {}) => {
-    const { gridSize, frames, alphaMap } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap"]);
+    const { gridSize, frames, alphaMap, softParticles, softParticleDistance = 0 } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap", "softParticles", "softParticleDistance"]);
     return new THREE.ShaderMaterial(Object.assign({ vertexShader: unlitSpriteVert, fragmentShader: unlitSpriteFrag, uniforms: {
             pointTexture: { value: texture },
             gridSize: { value: gridSize !== null && gridSize !== void 0 ? gridSize : { x: 1, y: 1 } },
             n_frames: { value: frames !== null && frames !== void 0 ? frames : 1 },
             alphaMap: { value: alphaMap !== null && alphaMap !== void 0 ? alphaMap : null },
             hasAlphaMap: { value: Boolean(alphaMap) },
+            softParticles: { value: Boolean(softParticleDistance) },
+            softParticleDistance: { value: softParticleDistance },
         }, depthTest: true, depthWrite: false, transparent: true, vertexColors: true }, materialOptions));
 };
 export default UnlitSprite;

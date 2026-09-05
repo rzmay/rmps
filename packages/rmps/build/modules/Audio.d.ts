@@ -1,0 +1,50 @@
+import * as THREE from 'three';
+import Module from '../Module';
+import ParticleSystem from '../ParticleSystem';
+import { DynamicValue } from '../types/DynamicValue';
+export interface AudioOptions {
+    listener?: THREE.AudioListener;
+    sound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
+    onCollisionSound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
+    ratio: number;
+    collisionRatio: number;
+    pitch: DynamicValue<number>;
+    volume: DynamicValue<number>;
+    sizeAffectsPitch: number;
+    sizeAffectsVolume: number;
+    alphaAffectsPitch: number;
+    alphaAffectsVolume: number;
+    speedAffectsPitch: number;
+    speedAffectsVolume: number;
+}
+declare class Audio extends Module {
+    listener?: THREE.AudioListener;
+    sound?: [AudioBuffer, ...AudioBuffer[]];
+    onCollisionSound?: [AudioBuffer, ...AudioBuffer[]];
+    ratio: number;
+    collisionRatio: number;
+    pitch: DynamicValue<number>;
+    volume: DynamicValue<number>;
+    sizeAffectsPitch: number;
+    sizeAffectsVolume: number;
+    alphaAffectsPitch: number;
+    alphaAffectsVolume: number;
+    speedAffectsPitch: number;
+    speedAffectsVolume: number;
+    private _system?;
+    private _particleAudio;
+    private _collisionAudio;
+    private _collision?;
+    private _setUpCollision;
+    constructor(options?: Partial<AudioOptions>);
+    prepare(system: ParticleSystem): void;
+    private _updateParticle;
+    private _handleCollision;
+    private _getPitch;
+    private _getVolume;
+    private _getEffect;
+    private _cleanParticleAudio;
+    private _removeParticleAudio;
+    cleanup(): void;
+}
+export default Audio;

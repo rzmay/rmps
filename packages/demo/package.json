@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@barclah/jolt-physics": "^0.31.0",
+    "@dimforge/rapier3d-compat": "^0.20.0",
     "@react-three/drei": "^10",
     "@react-three/fiber": "^9",
+    "@rmps/jolt": "^1.0.0",
+    "@rmps/rapier": "^1.0.0",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
@@ -39,6 +43,8 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.14.2",
     "@babel/preset-react": "^7.13.13",
+    "@rmps/jolt": "^1.0.0",
+    "@rmps/rapier": "^1.0.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-plugin-import": "^2.23.0",
     "eslint-plugin-jsx-a11y": "^6.4.1",

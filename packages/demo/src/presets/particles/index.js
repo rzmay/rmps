@@ -1,4 +1,6 @@
 import createAdditiveSmoke from './additiveSmoke';
+import createBubbles from './bubbles';
+import createCollision from './collision';
 import createCubes from './cubes';
 import createFire from './fire';
 import createFireball from './fireball';
@@ -22,6 +24,8 @@ const particlePresets = {
   "Suzanne Instances": createSuzannes,
   "Particle Trail": createParticleTrail,
   "Ribbon Trail": createRibbonTrail,
+  Collision: createCollision,
+  "Bubbles (Audio)": createBubbles,
 };
 
 export default particlePresets;

@@ -20,8 +20,5 @@ export interface InitialParticleValues {
 
     color: DynamicValue<THREE.Color>
     alpha: DynamicValue<number>;
-
-    // Spawn options
-    radial: DynamicValue<number>;
-    alignment: DynamicValue<number>;
+    mass: DynamicValue<number>;
 }

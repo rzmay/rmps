@@ -5,7 +5,7 @@ import {
   EmissionShape,
   LightRenderer,
   ParticleSystem,
-  SizeOverLifetime,
+  ScaleOverLifetime,
   SpriteRenderer,
 } from 'rmps';
 import fireballSprite from 'url:../../assets/images/fireball_tile_5x4_n20.png';
@@ -35,8 +35,8 @@ export default async function createFireball() {
       }),
     ],
     modules: [
-      new SizeOverLifetime({
-        size: (time) => {
+      new ScaleOverLifetime({
+        scale: (time) => {
           const size = curvePresets.grow.evaluate(time);
           return new THREE.Vector3(size, size, size);
         },
@@ -51,6 +51,7 @@ export default async function createFireball() {
         gridSize: { x: 5, y: 4 },
         frames: 20,
         fps: 30,
+        softParticleDistance: 1,
       }),
       new LightRenderer({
         count: 18,

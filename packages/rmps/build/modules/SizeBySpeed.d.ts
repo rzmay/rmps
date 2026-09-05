@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import Module from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
 import { SpeedRange } from './ColorBySpeed';
-export interface SizeBySpeedOptions {
+export interface ScaleBySpeedOptions {
     size: DynamicValue<THREE.Vector3>;
     speedRange: SpeedRange;
 }
-declare class SizeBySpeed extends Module {
-    options: SizeBySpeedOptions;
-    constructor(options: SizeBySpeedOptions);
+declare class ScaleBySpeed extends Module {
+    options: ScaleBySpeedOptions;
+    constructor(options: ScaleBySpeedOptions);
     private getSpeedTime;
 }
-export default SizeBySpeed;
+export default ScaleBySpeed;

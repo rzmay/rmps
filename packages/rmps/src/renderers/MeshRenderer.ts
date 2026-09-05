@@ -18,12 +18,18 @@ export interface MeshRendererOptions {
     geometry: THREE.BufferGeometry,
     material: THREE.MeshStandardMaterial,
     materialOptions: THREE.MeshStandardMaterialParameters,
+    castShadow: boolean,
+    receiveShadow: boolean,
 }
 
 class MeshRenderer extends Renderer {
     mesh: THREE.Mesh;
 
     instances: THREE.InstancedMesh;
+
+    castShadow: boolean = false;
+
+    receiveShadow: boolean = false;
 
     private _alphaAttr: THREE.InstancedBufferAttribute;
 
@@ -39,6 +45,9 @@ class MeshRenderer extends Renderer {
 
       this.instances = new THREE.InstancedMesh(this.mesh.geometry, this.mesh.material, options.maxParticles ?? 10000);
       this.instances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+      this.castShadow = options.castShadow ?? this.castShadow;
+      this.receiveShadow = options.receiveShadow ?? this.receiveShadow;
 
       this._alphaAttr = new THREE.InstancedBufferAttribute(
         new Float32Array(options.maxParticles ?? 10000),
@@ -60,6 +69,9 @@ class MeshRenderer extends Renderer {
 
     update(particles: Particle[]): void {
       this.instances.count = particles.length;
+
+      this.instances.castShadow = this.castShadow;
+      this.instances.receiveShadow = this.receiveShadow;
 
       particles.forEach((particle, i) => {
         this.dummy.position.set(...particle.position.toArray());
@@ -112,9 +124,6 @@ ${shader.fragmentShader}
 #include <opaque_fragment>
 gl_FragColor.a *= vInstanceAlpha;`
         );
-
-        console.log(shader.vertexShader);
-        console.log(shader.fragmentShader);
       };
 
       material.needsUpdate = true;

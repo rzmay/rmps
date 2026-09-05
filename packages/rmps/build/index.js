@@ -17,9 +17,13 @@ export { default as LimitVelocityOverLifetime } from './modules/LimitVelocityOve
 export { default as TransformByNoise } from './modules/TransformByNoise';
 export { default as ColorOverLifetime } from './modules/ColorOverLifetime';
 export { default as ColorBySpeed } from './modules/ColorBySpeed';
-export { default as SizeOverLifetime } from './modules/SizeOverLifetime';
-export { default as SizeBySpeed } from './modules/SizeBySpeed';
+export { default as ScaleOverLifetime } from './modules/ScaleOverLifetime';
+export { default as ScaleBySpeed } from './modules/ScaleBySpeed';
 export { default as RotationOverLifetime } from './modules/RotationOverLifetime';
 export { default as RotationBySpeed } from './modules/RotationBySpeed';
 export { default as ExternalForces } from './modules/ExternalForces';
+export { default as Collision } from './modules/Collision';
+export { default as Audio } from './modules/Audio';
 export { default as ParticleForceField } from './ParticleForceField';
+export { default as ParticleForceFieldHelper } from './ParticleForceFieldHelper';
+export { default as ThreeCollisionBackend } from './collision/ThreeCollisionBackend';

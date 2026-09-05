@@ -8,7 +8,7 @@ export type SpeedRange = [number, number] | {
 export interface ColorBySpeedOptions {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
-    speedRange: SpeedRange;
+    speedRange?: SpeedRange;
 }
 declare class ColorBySpeed extends Module {
     options: ColorBySpeedOptions;

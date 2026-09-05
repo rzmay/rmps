@@ -9,7 +9,7 @@ import {
   LimitVelocityOverLifetime,
   ParticleSystem,
   RotationOverLifetime,
-  SizeOverLifetime,
+  ScaleOverLifetime,
   SpriteRenderer,
   TransformByNoise,
   VelocityOverLifetime,
@@ -28,6 +28,7 @@ export default async function createFire() {
         rate: 90,
         duration: 10,
         looping: true,
+        radialSpeed: 0.2,
         initialValues: {
           lifetime: 1.35,
           speed: 1.2,
@@ -35,7 +36,6 @@ export default async function createFire() {
           color: [new THREE.Color('#ff9c88'), new THREE.Color('#ffd47f')],
           alpha: 0.95,
           velocity: new THREE.Vector3(0, 2.2, 0),
-          radial: 0.2,
         },
       }),
     ],
@@ -55,8 +55,8 @@ export default async function createFire() {
         drag: 0.3,
         multiplyDragByVelocity: true,
       }),
-      new SizeOverLifetime({
-        size: (time) => {
+      new ScaleOverLifetime({
+        scale: (time) => {
           const size = curvePresets.shrink.evaluate(time);
           return new THREE.Vector3(size, size, size);
         },
@@ -74,6 +74,7 @@ export default async function createFire() {
         gridSize: { x: 8, y: 4 },
         frames: 32,
         fps: 24,
+        softParticleDistance: 1,
       }),
       new LightRenderer({
         count: 18,

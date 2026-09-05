@@ -1,6 +1,6 @@
 import Module from '../Module';
 import evaluateDynamicVector from '../helpers/evaluateDynamicVector3';
-class SizeBySpeed extends Module {
+class ScaleBySpeed extends Module {
     constructor(options) {
         super((particle) => {
             particle.scale = particle.start.scale.clone().multiply(evaluateDynamicVector(this.options.size, this.getSpeedTime(particle.velocity.length()), particle.id));
@@ -15,4 +15,4 @@ class SizeBySpeed extends Module {
         return Math.min(Math.max((speed - min) / (max - min), 0), 1);
     }
 }
-export default SizeBySpeed;
+export default ScaleBySpeed;

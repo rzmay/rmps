@@ -8,10 +8,14 @@ export interface MeshRendererOptions {
     geometry: THREE.BufferGeometry;
     material: THREE.MeshStandardMaterial;
     materialOptions: THREE.MeshStandardMaterialParameters;
+    castShadow: boolean;
+    receiveShadow: boolean;
 }
 declare class MeshRenderer extends Renderer {
     mesh: THREE.Mesh;
     instances: THREE.InstancedMesh;
+    castShadow: boolean;
+    receiveShadow: boolean;
     private _alphaAttr;
     private dummy;
     constructor(options?: Partial<MeshRendererOptions>);

@@ -14,6 +14,8 @@ export interface BasicSpriteOptions extends THREE.ShaderMaterialParameters {
   roughnessMap: THREE.Texture;
   envMap: THREE.Texture;
   envIntensity: number;
+  softParticles: boolean;
+  softParticleDistance: number;
 }
 
 const BasicSprite = (
@@ -31,6 +33,8 @@ const BasicSprite = (
     roughnessMap,
     envMap,
     envIntensity = 1.0,
+    softParticles,
+    softParticleDistance = 0,
     ...materialOptions
   } = options;
 
@@ -62,7 +66,10 @@ const BasicSprite = (
 
         envMap: { value: envMap },
         envIntensity: { value: envIntensity },
-        hasEnvMap: { value: Boolean(envMap) }
+        hasEnvMap: { value: Boolean(envMap) },
+
+        softParticles: { value: Boolean(softParticleDistance) },
+        softParticleDistance: { value: softParticleDistance }
       },
     ]),
 

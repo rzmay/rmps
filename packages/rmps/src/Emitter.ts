@@ -8,6 +8,7 @@ import evaluateDynamicColor from './helpers/evaluateDynamicColor';
 import { DynamicValue } from './types/DynamicValue';
 import { multiple } from './types/multiple';
 import acceptMultiple from './helpers/acceptMultiple';
+import ParticleSystem from './ParticleSystem';
 
 type SpawnBurst = {
     time: number,
@@ -22,6 +23,9 @@ interface EmitterOptions {
     rate: DynamicValue<number>;
     duration: number;
     looping: boolean;
+
+    radialSpeed: DynamicValue<number>;
+    alignment: DynamicValue<number>;
 }
 
 class Emitter {
@@ -37,6 +41,10 @@ class Emitter {
 
     initialValues: Partial<InitialParticleValues>;
 
+    radialSpeed: DynamicValue<number>;
+
+    alignment: DynamicValue<number>;
+
     private _lastSpawn: number;
 
     private _startTime: number;
@@ -45,11 +53,14 @@ class Emitter {
       options: Partial<EmitterOptions> = {},
     ) {
       this.source = options.source ?? EmissionShape.Sphere();
-      this.initialValues = options.initialValues ?? { radial: 1 };
+      this.initialValues = options.initialValues ?? {};
       this.rate = options.rate ?? 50;
       this.bursts = acceptMultiple(options.bursts ?? []);
       this.duration = options.duration ?? 10;
       this.looping = options.looping ?? true;
+
+      this.radialSpeed = options.radialSpeed ?? 1
+      this.alignment = options.alignment ?? 0;
 
       this._lastSpawn = Date.now();
       this._startTime = Date.now();
@@ -61,6 +72,10 @@ class Emitter {
           this._lastSpawn = Date.now() - evaluateDynamicNumber(this.initialValues.lifetime, time) * 1000;
         }
       });
+    }
+
+    setup(particleSystem: ParticleSystem) {
+      particleSystem.add(this.source);
     }
 
     update(particles: Particle[]) {
@@ -116,7 +131,7 @@ class Emitter {
       );
       const rotation = new THREE.Vector3(0, 0, 0).lerp(
         defaultRotation,
-        Math.max(Math.min(evaluateDynamicNumber(this.initialValues.alignment ?? 0, time), 1), 0),
+        Math.max(Math.min(evaluateDynamicNumber(this.alignment, time), 1), 0),
       );
 
       const particle = new Particle({
@@ -125,6 +140,7 @@ class Emitter {
         scale: evaluateDynamicVector(this.initialValues.scale ?? new THREE.Vector3(1, 1, 1), time),
         color: evaluateDynamicColor(this.initialValues.color ?? new THREE.Color(1, 1, 1), time),
         alpha: evaluateDynamicNumber(this.initialValues.alpha ?? 1, time),
+        mass: evaluateDynamicNumber(this.initialValues.mass ?? 0, time),
         lifetime: evaluateDynamicNumber(this.initialValues.lifetime ?? 1, time),
       });
 
@@ -132,7 +148,7 @@ class Emitter {
 
       particle.velocity = evaluateDynamicVector(this.initialValues.velocity ?? new THREE.Vector3(0, 0, 0), time).clone()
         .add(normal.multiplyScalar(
-          evaluateDynamicNumber(this.initialValues.radial ?? 0, time),
+          evaluateDynamicNumber(this.radialSpeed, time),
         ));
 
       if (this.initialValues.angularVelocity) particle.angularVelocity = evaluateDynamicVector(this.initialValues.angularVelocity, time).clone();

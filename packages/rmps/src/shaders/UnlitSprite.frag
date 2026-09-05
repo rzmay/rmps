@@ -4,11 +4,21 @@ uniform bool hasAlphaMap;
 uniform vec2 gridSize;
 uniform int n_frames;
 
+uniform bool softParticles;
+uniform float softParticleDistance;
+uniform sampler2D sceneDepthTexture;
+uniform vec2 depthResolution;
+uniform float depthCameraNear;
+uniform float depthCameraFar;
+
 varying vec4 vColor;
 varying float aspectRatio;
 varying float angle;
 
 flat in int fragFrame;
+
+// perspectiveDepthToViewZ
+#include <packing>
 
 vec2 sprite_coord(vec2 coord, int frame) {
     float f_frame = mod(float(frame), float(n_frames));
@@ -68,9 +78,55 @@ void main() {
 
     vec4 baseColor = gl_FragColor * texture2D(pointTexture, spriteCoord);
 
-    if (hasAlphaMap) {
-        baseColor.a *= texture2D(alphaMap, spriteCoord).r;
+    //
+    // SOFT PARTICLES
+    //
+
+    float finalAlpha = baseColor.a;
+    if (softParticles)
+    {
+        float particleViewZ =
+            perspectiveDepthToViewZ(
+                gl_FragCoord.z,
+                depthCameraNear,
+                depthCameraFar
+            );
+
+        vec2 screenUv =
+            gl_FragCoord.xy / depthResolution;
+
+        float sceneDepth =
+            texture2D(
+                sceneDepthTexture,
+                screenUv
+            ).x;
+
+        float sceneViewZ =
+            perspectiveDepthToViewZ(
+                sceneDepth,
+                depthCameraNear,
+                depthCameraFar
+            );
+
+        float depthDifference =
+            abs(particleViewZ - sceneViewZ);
+
+        float softFade =
+            smoothstep(
+                0.0,
+                softParticleDistance,
+                depthDifference
+            );
+
+        finalAlpha *= softFade;
     }
 
-    gl_FragColor = baseColor;
+    if (hasAlphaMap) {
+        finalAlpha *= texture2D(alphaMap, spriteCoord).r;
+    }
+
+    gl_FragColor = vec4(
+        baseColor.rgb,
+        finalAlpha
+    );
 }

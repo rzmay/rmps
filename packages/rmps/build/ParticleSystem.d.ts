@@ -19,10 +19,19 @@ declare class ParticleSystem extends THREE.Object3D {
     renderers: Renderer[];
     gravity: THREE.Vector3;
     gravityModifier: DynamicValue<number>;
+    private _scene?;
+    get scene(): THREE.Scene<THREE.Object3DEventMap> | undefined;
+    private _camera?;
+    get sceneCamera(): THREE.Camera | undefined;
+    private _renderer?;
+    get sceneRenderer(): THREE.WebGLRenderer | undefined;
     private deltaTime;
     private lastFrame;
     constructor(options?: Partial<ParticleSystemOptions>);
     private calculateDeltaTime;
     update(): void;
+    addModule(module: Module): this;
+    removeModule(module: Module): this;
+    private cleanup;
 }
 export default ParticleSystem;

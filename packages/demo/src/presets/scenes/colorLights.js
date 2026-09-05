@@ -52,6 +52,7 @@ export default function loadColorLights(scene) {
       15,
       2,
     );
+    light.castShadow = true
 
     root.add(light);
 
@@ -83,6 +84,7 @@ export default function loadColorLights(scene) {
 
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -2;
+  ground.receiveShadow = true;
 
   root.add(ground);
   scene.add(root);

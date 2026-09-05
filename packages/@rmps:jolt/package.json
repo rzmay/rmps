@@ -1,0 +1,27 @@
+{
+  "name": "@rmps/jolt",
+  "version": "1.0.0",
+  "description": "Jolt physics engine extension for rmps.",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "author": "Robert May",
+  "license": "MIT",
+  "peerDependencies": {
+    "rmps": "^1.0.0",
+    "@barclah/jolt-physics": "^0.31.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "rmps": "^1.0.0",
+    "@barclah/jolt-physics": "^0.31.0",
+    "three": "^0.185.1",
+    "typescript": "^5.0.0"
+  }
+}

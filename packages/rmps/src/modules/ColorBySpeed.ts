@@ -10,7 +10,7 @@ export type SpeedRange = [number, number] | { min: number; max: number };
 export interface ColorBySpeedOptions {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
-    speedRange: SpeedRange;
+    speedRange?: SpeedRange;
 }
 
 class ColorBySpeed extends Module {
@@ -28,8 +28,8 @@ class ColorBySpeed extends Module {
   }
 
   private getSpeedTime(speed: number): number {
-    const min = Array.isArray(this.options.speedRange) ? this.options.speedRange[0] : this.options.speedRange.min;
-    const max = Array.isArray(this.options.speedRange) ? this.options.speedRange[1] : this.options.speedRange.max;
+    const min = Array.isArray(this.options.speedRange) ? this.options.speedRange[0] : this.options.speedRange?.min ?? 0;
+    const max = Array.isArray(this.options.speedRange) ? this.options.speedRange[1] : this.options.speedRange?.max ?? 1;
     if (max === min) return speed >= max ? 1 : 0;
 
     return Math.min(Math.max((speed - min) / (max - min), 0), 1);

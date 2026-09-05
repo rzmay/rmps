@@ -1,7 +1,7 @@
 import GUI from 'lil-gui';
 import * as THREE from 'three';
 
-// Replace this module specifier with the actual npm package name.
+// TODO: this should support the cast/receive shadow options in the mesh and trail renderers
 import {
     Emitter,
     EmissionShape,
@@ -13,8 +13,8 @@ import {
     TransformByNoise,
     ColorOverLifetime,
     ColorBySpeed,
-    SizeOverLifetime,
-    SizeBySpeed,
+    ScaleOverLifetime,
+    ScaleBySpeed,
     RotationOverLifetime,
     RotationBySpeed,
     ExternalForces,
@@ -24,7 +24,8 @@ import {
     TrailRenderer,
     TrailMode,
     TrailTextureMode,
-} from '../../../rmps/build';
+    Collision,
+} from 'rmps';
 
 const INITIAL_VALUE_DEFAULTS = {
     lifetime: () => 1,
@@ -40,7 +41,6 @@ const INITIAL_VALUE_DEFAULTS = {
     scalarAcceleration: () => new THREE.Vector3(),
     color: () => new THREE.Color(1, 1, 1),
     alpha: () => 1,
-    radial: () => 0,
 };
 const DEFAULT_MODULE_FACTORIES = {
     'Velocity Over Lifetime': () => new VelocityOverLifetime({ linear: new THREE.Vector3() }),
@@ -49,13 +49,14 @@ const DEFAULT_MODULE_FACTORIES = {
     'Transform By Noise': () => new TransformByNoise({ strength: new THREE.Vector3(1, 1, 1), frequency: 1 }),
     'Color Over Lifetime': () => new ColorOverLifetime({ color: new THREE.Color(1, 1, 1), alpha: 1 }),
     'Color By Speed': () => new ColorBySpeed({ color: new THREE.Color(1, 1, 1), speedRange: [0, 10] }),
-    'Size Over Lifetime': () => new SizeOverLifetime({ size: new THREE.Vector3(1, 1, 1) }),
-    'Size By Speed': () => new SizeBySpeed({ size: new THREE.Vector3(1, 1, 1), speedRange: [0, 10] }),
+    'Size Over Lifetime': () => new ScaleOverLifetime({ scale: new THREE.Vector3(1, 1, 1) }),
+    'Size By Speed': () => new ScaleBySpeed({ scale: new THREE.Vector3(1, 1, 1), speedRange: [0, 10] }),
     'Rotation Over Lifetime': () => new RotationOverLifetime({ angularVelocity: new THREE.Vector3() }),
     'Rotation By Speed': () => new RotationBySpeed({ angularVelocity: new THREE.Vector3(), speedRange: [0, 10] }),
     'Noise Module': () => new NoiseModule('noise'),
     // ExternalForces needs project-owned force fields, so it starts empty.
     'External Forces': () => new ExternalForces({ forceFields: [], multiplier: 1 }),
+    'Collision': () => new Collision(),
 };
 const DEFAULT_RENDERER_FACTORIES = {
     Sprite: () => new SpriteRenderer(),
@@ -355,7 +356,14 @@ export class ParticleSystemGUI {
             this.addObject(folder, candidate.options);
         }
         else {
-            const hidden = new Set(['modify', 'noiseGenerator']);
+            const hidden = new Set([
+                'modify',
+                'noiseGenerator',
+                'dependents',
+                'priority',
+                'backend',
+                'collisionListeners',
+            ]);
             Object.keys(candidate)
                 .filter((key) => !key.startsWith('_') && !hidden.has(key))
                 .forEach((key) => this.addValue(folder, candidate, key, this.prettyName(key)));
@@ -871,6 +879,18 @@ export class ParticleSystemGUI {
         return `Object.assign(${expression}, { source: EmissionSource.${this.emissionSourceName(shape.source)} })`;
     }
     serializeModule(module) {
+        if (module instanceof Collision) {
+            return `new Collision(${this.serializeValue({
+                dampen: module.dampen,
+                bounce: module.bounce,
+                lifetimeLoss: module.lifetimeLoss,
+                applyImpulses: module.applyImpulses,
+                radiusScale: module.radiusScale,
+                minKillSpeed: module.minKillSpeed,
+                maxKillSpeed: module.maxKillSpeed,
+            })})`;
+        }
+
         if (module instanceof NoiseModule) {
             const runtime = module;
             return `new NoiseModule(${JSON.stringify(runtime.key)}, ${this.serializeValue({

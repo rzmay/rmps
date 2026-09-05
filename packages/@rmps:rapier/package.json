@@ -1,0 +1,27 @@
+{
+  "name": "@rmps/rapier",
+  "version": "1.0.0",
+  "description": "Rapier physics engine extension for rmps.",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "files": [
+    "build/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "author": "Robert May",
+  "license": "MIT",
+  "peerDependencies": {
+    "@dimforge/rapier3d-compat": "^0.20.0",
+    "rmps": "^1.0.0",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@dimforge/rapier3d-compat": "^0.20.0",
+    "rmps": "^1.0.0",
+    "three": "^0.185.1",
+    "typescript": "^5.0.0"
+  }
+}

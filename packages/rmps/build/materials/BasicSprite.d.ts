@@ -14,6 +14,8 @@ export interface BasicSpriteOptions extends THREE.ShaderMaterialParameters {
     roughnessMap: THREE.Texture;
     envMap: THREE.Texture;
     envIntensity: number;
+    softParticles: boolean;
+    softParticleDistance: number;
 }
 declare const BasicSprite: (texture: THREE.Texture, options?: Partial<BasicSpriteOptions>) => THREE.ShaderMaterial;
 export default BasicSprite;

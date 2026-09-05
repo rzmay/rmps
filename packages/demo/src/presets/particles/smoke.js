@@ -6,7 +6,7 @@ import {
   LimitVelocityOverLifetime,
   ParticleSystem,
   RotationOverLifetime,
-  SizeOverLifetime,
+  ScaleOverLifetime,
   SpriteRenderer,
   TransformByNoise,
 } from 'rmps';
@@ -25,6 +25,7 @@ export default async function createSmoke() {
         rate: 36,
         duration: 10,
         looping: true,
+        radialSpeed: 0.18,
         initialValues: {
           lifetime: 4.5,
           speed: 0.55,
@@ -32,7 +33,6 @@ export default async function createSmoke() {
           color: [new THREE.Color('#4e4d4a'), new THREE.Color('#a7a097')],
           alpha: 0.55,
           velocity: new THREE.Vector3(0, 0.75, 0),
-          radial: 0.18,
         },
       }),
     ],
@@ -46,8 +46,8 @@ export default async function createSmoke() {
         drag: 0.1,
         multiplyDragByVelocity: true,
       }),
-      new SizeOverLifetime({
-        size: (time) => {
+      new ScaleOverLifetime({
+        scale: (time) => {
           const size = curvePresets.grow.evaluate(time);
           return new THREE.Vector3(size, size, size);
         },
@@ -64,6 +64,7 @@ export default async function createSmoke() {
       new SpriteRenderer(defaultSprite, {
         material: 'basic',
         alphaMap: smokeAlpha,
+        softParticleDistance: 1,
         materialOptions: {
           roughness: 1,
           normalLighting: 0.5,

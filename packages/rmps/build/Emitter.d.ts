@@ -3,6 +3,7 @@ import Particle from './Particle';
 import { InitialParticleValues } from './interfaces/InitialParticleValues';
 import { DynamicValue } from './types/DynamicValue';
 import { multiple } from './types/multiple';
+import ParticleSystem from './ParticleSystem';
 type SpawnBurst = {
     time: number;
     count: number;
@@ -15,6 +16,8 @@ interface EmitterOptions {
     rate: DynamicValue<number>;
     duration: number;
     looping: boolean;
+    radialSpeed: DynamicValue<number>;
+    alignment: DynamicValue<number>;
 }
 declare class Emitter {
     source: EmissionShape;
@@ -23,9 +26,12 @@ declare class Emitter {
     looping: boolean;
     bursts: SpawnBurst[];
     initialValues: Partial<InitialParticleValues>;
+    radialSpeed: DynamicValue<number>;
+    alignment: DynamicValue<number>;
     private _lastSpawn;
     private _startTime;
     constructor(options?: Partial<EmitterOptions>);
+    setup(particleSystem: ParticleSystem): void;
     update(particles: Particle[]): void;
     private spawnParticle;
 }

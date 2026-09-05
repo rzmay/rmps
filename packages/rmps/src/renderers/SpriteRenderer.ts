@@ -8,6 +8,12 @@ import BasicSprite, { BasicSpriteOptions } from '../materials/BasicSprite';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 
+type SceneDepthData = {
+  target: THREE.WebGLRenderTarget;
+  frame: number;
+  rendering: boolean;
+};
+
 export interface SpriteRendererOptions {
   fps: DynamicValue<number>;
   tileSize: {x: number, y: number};
@@ -17,6 +23,8 @@ export interface SpriteRendererOptions {
   alphaMap: string | THREE.Texture;
   material: 'unlit' | 'basic';
   materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
+  castShadow: boolean;
+  softParticleDistance: number;
 }
 
 class SpriteRenderer extends Renderer {
@@ -36,7 +44,9 @@ class SpriteRenderer extends Renderer {
 
   fps: DynamicValue<number> = 1;
 
-  private system?: ParticleSystem;
+  castShadow: boolean = false;
+
+  softParticleDistance: number = 0;
 
   private material: THREE.ShaderMaterial;
 
@@ -77,6 +87,10 @@ class SpriteRenderer extends Renderer {
     this.tileSize = new THREE.Vector2(options.tileSize?.x, options.tileSize?.y);
     this.tileMargin = new THREE.Vector2(options.tileMargin?.x, options.tileMargin?.y);
     this.gridSize = new THREE.Vector2(options.gridSize?.x ?? 1, options.gridSize?.y ?? 1);
+    this.castShadow = options.castShadow ?? this.castShadow;
+    this.softParticleDistance = options.softParticleDistance
+      ?? options.materialOptions?.softParticleDistance
+      ?? 0;
 
     this.frames = options.frames ?? this.gridSize.x * this.gridSize.y;
 
@@ -87,27 +101,61 @@ class SpriteRenderer extends Renderer {
     this.material = this.loadMaterial(this._materialOptions);
     this.points = new THREE.Points(this.geometry, this.material);
     this.points.frustumCulled = false;
+    this.points.castShadow = this.castShadow;
 
-    // Get a reference to the renderer
-    this.points.onBeforeRender = (renderer, scene) => {
-      if (!(renderer instanceof THREE.WebGLRenderer))
-          return;
-
-      const environment =
-          this._materialOptions && 'envMap' in this._materialOptions
-              ? this._materialOptions.envMap ?? scene.environment
-              : scene.environment;
-
-      this.updateEnvironmentMap(renderer, environment);
-    };
+    // Add user data to the points so we can recognize it elsewhere
+    this.points.userData["__rmps_spriteRenderer"] = true;
   }
 
   setup(system: ParticleSystem) {
     system.add(this.points);
-    this.system = system;
   }
 
-  update(particles: Particle[]): void {
+  update(particles: Particle[], system: ParticleSystem): void {
+    // Update attributes
+    this.updateAttributes(particles);
+
+    // Should the points cast a shadow?
+    this.points.castShadow = this.castShadow;
+
+    // Set uniforms for soft particles
+    this.material.uniforms.softParticles.value = Boolean(this.softParticleDistance);
+    this.material.uniforms.softParticleDistance.value = this.softParticleDistance;
+
+    // Get depth texture for soft particles
+    if (!(system.sceneRenderer instanceof THREE.WebGLRenderer)) return;
+    if (!(system.scene instanceof THREE.Scene)) return;
+    if (!(system.sceneCamera instanceof THREE.Camera)) return;
+
+    const depthTexture = this.getSceneDepth(system.sceneRenderer, system.scene, system.sceneCamera);
+    const softParticles = this.softParticleDistance > 0 && Boolean(depthTexture);
+    this.material.uniforms.softParticles.value = softParticles;
+
+    if (softParticles && depthTexture) {
+      this.material.uniforms.softParticles = { value: true };
+      this.material.uniforms.sceneDepthTexture = { value: depthTexture };
+
+      this.material.uniforms.depthResolution = { value: new THREE.Vector2() }
+      system.sceneRenderer.getDrawingBufferSize(this.material.uniforms.depthResolution.value);
+
+      if (system.sceneCamera instanceof THREE.PerspectiveCamera) {
+        this.material.uniforms.depthCameraNear = { value: system.sceneCamera.near };
+        this.material.uniforms.depthCameraFar = { value: system.sceneCamera.far };
+      }
+    } else {
+      this.material.uniforms.softParticles = { value: false };
+    }
+
+    const environment =
+        this._materialOptions && 'envMap' in this._materialOptions
+            ? this._materialOptions.envMap ?? system.scene.environment
+            : system.scene.environment;
+
+    // Update environment map
+    this.updateEnvironmentMap(system.sceneRenderer, environment);
+  }
+
+  private updateAttributes(particles: Particle[]) {
     this.geometry.setAttribute('position', new THREE.BufferAttribute(
       new Float32Array(
         particles.flatMap(
@@ -173,6 +221,7 @@ class SpriteRenderer extends Renderer {
       frames: this.frames,
       gridSize: this.gridSize,
       alphaMap: this.alphaMap,
+      softParticleDistance: this.softParticleDistance
     });
   }
 
@@ -277,6 +326,86 @@ class SpriteRenderer extends Renderer {
     this.material.defines.CUBEUV_MAX_MIP = `${maxMip}.0`;
 
     this.material.needsUpdate = true;
+  }
+
+  private getSceneDepth(
+    renderer: THREE.WebGLRenderer,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+  ): THREE.DepthTexture | undefined {
+    let data = scene.userData["__rmps_sceneDepthData"] as SceneDepthData | undefined;
+
+    if (!data) {
+      const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+
+      const depthTexture = new THREE.DepthTexture(
+        size.x,
+        size.y,
+        THREE.UnsignedIntType,
+      );
+
+      const target = new THREE.WebGLRenderTarget(
+        size.x,
+        size.y,
+        {
+          depthBuffer: true,
+          depthTexture,
+        },
+      );
+
+      data = {
+        target,
+        frame: -1,
+        rendering: false,
+      };
+
+      scene.userData["__rmps_sceneDepthData"] = data;
+    }
+
+    if (data.rendering) {
+      return data.target.depthTexture ?? undefined;
+    }
+
+    const frame = renderer.info.render.frame;
+
+    if (data.frame === frame) {
+      return data.target.depthTexture ?? undefined;
+    }
+
+    data.frame = frame;
+    data.rendering = true;
+
+    const size = renderer.getDrawingBufferSize(
+      new THREE.Vector2(),
+    );
+
+    if (
+      data.target.width !== size.x
+      || data.target.height !== size.y
+    ) {
+      data.target.setSize(
+        size.x,
+        size.y,
+      );
+    }
+
+    const previousTarget = renderer.getRenderTarget();
+
+    renderer.setRenderTarget(data.target);
+    renderer.clear();
+
+    renderer.render(
+      scene,
+      camera,
+    );
+
+    renderer.setRenderTarget(
+      previousTarget,
+    );
+
+    data.rendering = false;
+
+    return data.target.depthTexture ?? undefined;
   }
 }
 

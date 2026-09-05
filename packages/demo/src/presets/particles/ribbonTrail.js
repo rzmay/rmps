@@ -17,8 +17,8 @@ export default async function createRibbonTrail() {
         rate: 50,
         duration: 4,
         looping: true,
+        radialSpeed: 5,
         initialValues: {
-          radial: 5,
           lifetime: 1,
           scale: new THREE.Vector3(0.12, 0.12, 0.12),
         },

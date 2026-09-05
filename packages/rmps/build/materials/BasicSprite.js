@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import basicSpriteVert from '../shaders/BasicSprite.vert.js';
 import basicSpriteFrag from '../shaders/BasicSprite.frag.js';
 const BasicSprite = (texture, options = {}) => {
-    const { gridSize, frames, alphaMap, normalMap, normalStrength = 1, normalLighting, sphericalNormals, roughness = 0.5, roughnessMap, envMap, envIntensity = 1.0 } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap", "normalMap", "normalStrength", "normalLighting", "sphericalNormals", "roughness", "roughnessMap", "envMap", "envIntensity"]);
+    const { gridSize, frames, alphaMap, normalMap, normalStrength = 1, normalLighting, sphericalNormals, roughness = 0.5, roughnessMap, envMap, envIntensity = 1.0, softParticles, softParticleDistance = 0 } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap", "normalMap", "normalStrength", "normalLighting", "sphericalNormals", "roughness", "roughnessMap", "envMap", "envIntensity", "softParticles", "softParticleDistance"]);
     return new THREE.ShaderMaterial(Object.assign({ vertexShader: basicSpriteVert, fragmentShader: basicSpriteFrag, uniforms: THREE.UniformsUtils.merge([
             THREE.UniformsLib.lights,
             {
@@ -33,7 +33,9 @@ const BasicSprite = (texture, options = {}) => {
                 hasRoughnessMap: { value: Boolean(roughnessMap) },
                 envMap: { value: envMap },
                 envIntensity: { value: envIntensity },
-                hasEnvMap: { value: Boolean(envMap) }
+                hasEnvMap: { value: Boolean(envMap) },
+                softParticles: { value: Boolean(softParticleDistance) },
+                softParticleDistance: { value: softParticleDistance }
             },
         ]), depthTest: true, depthWrite: false, lights: true, transparent: true, vertexColors: true }, materialOptions));
 };

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js';
 import { EmissionSource } from './enums/EmissionSource';
-class EmissionShape {
+import isPointInMesh from './helpers/isPointInMesh';
+class EmissionShape extends THREE.Object3D {
     static Box(...args) {
         return new EmissionShape({ geometry: new THREE.BoxGeometry(...args) });
     }
@@ -16,6 +17,7 @@ class EmissionShape {
     }
     constructor(options = {}) {
         var _a, _b;
+        super();
         this._vertexNormals = [];
         this._raycaster = new THREE.Raycaster();
         this._geometry = (_a = options.geometry) !== null && _a !== void 0 ? _a : new THREE.SphereGeometry();
@@ -65,34 +67,48 @@ class EmissionShape {
         }
         this._vertexNormals = res;
     }
+    _toParentPosition(localPosition) {
+        this.updateWorldMatrix(true, false);
+        const worldPosition = localPosition.clone().applyMatrix4(this.matrixWorld);
+        return this.parent
+            ? this.parent.worldToLocal(worldPosition)
+            : worldPosition;
+    }
+    _toParentNormal(localNormal) {
+        const normalMatrix = new THREE.Matrix3().getNormalMatrix(this.matrix);
+        return localNormal
+            .clone()
+            .applyNormalMatrix(normalMatrix)
+            .normalize();
+    }
     getPoint(overrideSource) {
         switch (overrideSource !== null && overrideSource !== void 0 ? overrideSource : this.source) {
             case EmissionSource.Vertices: // Select random vertex
                 const { vertices } = this;
                 const vertexIndex = Math.floor(Math.random() * vertices.length);
                 return {
-                    position: vertices[vertexIndex],
-                    normal: this._vertexNormals[vertexIndex],
+                    position: this._toParentPosition(vertices[vertexIndex]),
+                    normal: this._toParentNormal(this._vertexNormals[vertexIndex]),
                 };
             case EmissionSource.Surface: // Use surface sampler to find random point on surface
                 const position = new THREE.Vector3(0, 0, 0);
                 const normal = new THREE.Vector3(0, 0, 0);
                 this._surfaceSampler.sample(position, normal);
-                return { position, normal };
+                return {
+                    position: this._toParentPosition(position),
+                    normal: this._toParentNormal(normal),
+                };
             default: // Choose random points in bounding box until one is contained by geometry (volume)
                 const { min, max } = this._geometry.boundingBox;
                 const randomPoint = new THREE.Vector3(THREE.MathUtils.lerp(min.x, max.x, Math.random()), THREE.MathUtils.lerp(min.y, max.y, Math.random()), THREE.MathUtils.lerp(min.z, max.z, Math.random()));
                 // Search for the allotted iterations
                 let iterations = 0;
                 while (iterations < EmissionShape.maxVolumeIterations) {
-                    const simulationScene = new THREE.Scene();
-                    simulationScene.add(this._mesh);
-                    // If ray cast intercepts an odd number of sides, point is inside
-                    this._raycaster.set(randomPoint, new THREE.Vector3(1, 1, 1));
-                    const intersects = this._raycaster.intersectObject(this._mesh);
-                    // If inside, return; if not, try again
-                    if (intersects.length % 2 === 1) {
-                        return { position: randomPoint, normal: this._calculatePointNormal(randomPoint) };
+                    if (isPointInMesh(randomPoint, this._mesh)) {
+                        return {
+                            position: this._toParentPosition(randomPoint),
+                            normal: this._toParentNormal(this._calculatePointNormal(randomPoint)),
+                        };
                     }
                     iterations += 1;
                 }

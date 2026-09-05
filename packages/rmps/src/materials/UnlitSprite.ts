@@ -6,6 +6,8 @@ export interface UnlitSpriteOptions {
   gridSize: {x: number, y: number};
   frames: number;
   alphaMap: THREE.Texture;
+  softParticles: boolean;
+  softParticleDistance: number;
 }
 
 const UnlitSprite = (
@@ -15,6 +17,8 @@ const UnlitSprite = (
     gridSize,
     frames,
     alphaMap,
+    softParticles,
+    softParticleDistance = 0,
     ...materialOptions
   } = options;
 
@@ -27,6 +31,8 @@ const UnlitSprite = (
       n_frames: { value: frames ?? 1 },
       alphaMap: { value: alphaMap ?? null },
       hasAlphaMap: { value: Boolean(alphaMap) },
+      softParticles: { value: Boolean(softParticleDistance) },
+      softParticleDistance: { value: softParticleDistance },
     },
 
     depthTest: true,

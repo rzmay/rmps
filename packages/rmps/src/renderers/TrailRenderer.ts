@@ -46,6 +46,9 @@ export interface TrailRendererOptions {
 
   material: THREE.Material;
   materialOptions: THREE.MeshStandardMaterialParameters;
+
+  castShadow: boolean;
+  receiveShadow: boolean;
 }
 
 
@@ -117,6 +120,10 @@ class TrailRenderer extends Renderer {
 
   mesh: THREE.Mesh;
 
+  castShadow: boolean = false;
+
+  receiveShadow: boolean = false;
+
   private particles: Particle[] = [];
 
   private trails: Map<string, ParticleTrail> =
@@ -146,6 +153,9 @@ class TrailRenderer extends Renderer {
     this.colorOverLifetime = options.colorOverLifetime ?? this.colorOverLifetime;
     this.colorOverTrail = options.colorOverTrail ?? this.colorOverTrail;
 
+    this.castShadow = options.castShadow ?? this.castShadow;
+    this.receiveShadow = options.receiveShadow ?? this.receiveShadow;
+
     this.geometry = new THREE.BufferGeometry();
     this.material = options.material ?? new THREE.MeshStandardMaterial({
       vertexColors: true,
@@ -162,25 +172,23 @@ class TrailRenderer extends Renderer {
       this.material,
     );
 
-    this.mesh.frustumCulled = false;
+    // Add user data to the mesh so we can recognize it elsewhere
+    this.mesh.userData["__rmps_trailRenderer"] = true;
 
-    // Trail width must face the active camera.
-    this.mesh.onBeforeRender = (
-      _renderer,
-      _scene,
-      camera,
-    ) => {
-      this.camera = camera;
-    };
+    this.mesh.frustumCulled = false;
   }
 
   setup(system: ParticleSystem): void {
     system.add(this.mesh);
-  }
 
+    this.camera = system.sceneCamera;
+  }
 
   update(particles: Particle[]): void {
     this.particles = particles;
+
+    this.mesh.castShadow = this.castShadow;
+    this.mesh.receiveShadow = this.receiveShadow;
 
     if (this.mode === TrailMode.Particle) {
       this.updateParticleTrails(

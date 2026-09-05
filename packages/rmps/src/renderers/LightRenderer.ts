@@ -4,6 +4,7 @@ import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
+import particleRatio from '../helpers/particleRatio';
 
 export interface PointLightOptions {
     color?: THREE.Color | string | number;
@@ -174,22 +175,11 @@ class LightRenderer extends Renderer {
       if (this.ratio >= 1) return particles;
 
       if (this.randomDistribution) {
-        return particles.filter((particle) => this._getParticleRatioValue(particle) < this.ratio);
+        return particles.filter((particle) => particleRatio(particle, this.ratio));
       }
 
       const step = Math.max(1, Math.round(1 / this.ratio));
       return particles.filter((particle, index) => index % step === 0);
-    }
-
-    // eslint-disable-next-line class-methods-use-this
-    private _getParticleRatioValue(particle: Particle): number {
-      let hash = 0;
-      for (let i = 0; i < particle.id.length; i += 1) {
-        // eslint-disable-next-line no-bitwise
-        hash = (hash * 31 + particle.id.charCodeAt(i)) >>> 0;
-      }
-
-      return hash / 0xffffffff;
     }
 
     private _getParticleGroups(particles: Particle[]): Particle[][] {

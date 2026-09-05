@@ -4,7 +4,7 @@ interface EmissionShapeOptions {
     geometry: THREE.BufferGeometry;
     source: EmissionSource;
 }
-declare class EmissionShape {
+declare class EmissionShape extends THREE.Object3D {
     static maxVolumeIterations: number;
     private static readonly _doubleSidedMaterial;
     static Box(...args: any[]): EmissionShape;
@@ -23,6 +23,8 @@ declare class EmissionShape {
     get vertices(): THREE.Vector3[];
     private _calculatePointNormal;
     computeVertexNormals(): void;
+    private _toParentPosition;
+    private _toParentNormal;
     getPoint(overrideSource?: EmissionSource): {
         position: THREE.Vector3;
         normal: THREE.Vector3;

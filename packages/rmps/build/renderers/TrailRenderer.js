@@ -19,7 +19,7 @@ export var TrailTextureMode;
 ;
 class TrailRenderer extends Renderer {
     constructor(options = {}) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
         super();
         this.mode = TrailMode.Particle;
         this.ratio = 1;
@@ -35,6 +35,8 @@ class TrailRenderer extends Renderer {
         this.colorOverLifetime = new THREE.Color(0xffffff);
         this.widthOverTrail = 1;
         this.colorOverTrail = new THREE.Color(0xffffff);
+        this.castShadow = false;
+        this.receiveShadow = false;
         this.particles = [];
         this.trails = new Map();
         this.mode = (_a = options.mode) !== null && _a !== void 0 ? _a : this.mode;
@@ -51,21 +53,24 @@ class TrailRenderer extends Renderer {
         this.inheritParticleColor = (_m = options.inheritParticleColor) !== null && _m !== void 0 ? _m : this.inheritParticleColor;
         this.colorOverLifetime = (_o = options.colorOverLifetime) !== null && _o !== void 0 ? _o : this.colorOverLifetime;
         this.colorOverTrail = (_p = options.colorOverTrail) !== null && _p !== void 0 ? _p : this.colorOverTrail;
+        this.castShadow = (_q = options.castShadow) !== null && _q !== void 0 ? _q : this.castShadow;
+        this.receiveShadow = (_r = options.receiveShadow) !== null && _r !== void 0 ? _r : this.receiveShadow;
         this.geometry = new THREE.BufferGeometry();
-        this.material = (_q = options.material) !== null && _q !== void 0 ? _q : new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, side: THREE.DoubleSide, transparent: true, depthWrite: false }, options.materialOptions));
+        this.material = (_s = options.material) !== null && _s !== void 0 ? _s : new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, side: THREE.DoubleSide, transparent: true, depthWrite: false }, options.materialOptions));
         this.preprocessMaterial(this.material);
         this.mesh = new THREE.Mesh(this.geometry, this.material);
+        // Add user data to the mesh so we can recognize it elsewhere
+        this.mesh.userData["__rmps_trailRenderer"] = true;
         this.mesh.frustumCulled = false;
-        // Trail width must face the active camera.
-        this.mesh.onBeforeRender = (_renderer, _scene, camera) => {
-            this.camera = camera;
-        };
     }
     setup(system) {
         system.add(this.mesh);
+        this.camera = system.sceneCamera;
     }
     update(particles) {
         this.particles = particles;
+        this.mesh.castShadow = this.castShadow;
+        this.mesh.receiveShadow = this.receiveShadow;
         if (this.mode === TrailMode.Particle) {
             this.updateParticleTrails(particles);
         }

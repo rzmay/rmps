@@ -14,6 +14,5 @@ export interface InitialParticleValues {
     scalarAcceleration: DynamicValue<THREE.Vector3>;
     color: DynamicValue<THREE.Color>;
     alpha: DynamicValue<number>;
-    radial: DynamicValue<number>;
-    alignment: DynamicValue<number>;
+    mass: DynamicValue<number>;
 }

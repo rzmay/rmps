@@ -6,8 +6,10 @@ interface ParticleOptions {
     color: THREE.Color;
     alpha: number;
     lifetime: number;
+    mass: number;
 }
 export interface ParticleStartValues {
+    lifetime: number;
     position: THREE.Vector3;
     rotation: THREE.Vector3;
     scale: THREE.Vector3;
@@ -20,6 +22,7 @@ export interface ParticleStartValues {
     speed: number;
     color: THREE.Color;
     alpha: number;
+    mass: number;
 }
 export interface ParticleNoiseValues {
     noise: number;
@@ -38,6 +41,7 @@ declare class Particle {
     speed: number;
     color: THREE.Color;
     alpha: number;
+    mass: number;
     startTime: number;
     lifetime: number;
     time: number;

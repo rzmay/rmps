@@ -12,7 +12,7 @@ class SpriteRenderer extends Renderer {
         this.points.material = this.material;
     }
     constructor(texture = simple, options = {}) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
         super();
         this.frames = 1;
         this.materialType = 'unlit';
@@ -20,6 +20,8 @@ class SpriteRenderer extends Renderer {
         this.tileMargin = new THREE.Vector2(0, 0);
         this.gridSize = new THREE.Vector2(1, 1);
         this.fps = 1;
+        this.castShadow = false;
+        this.softParticleDistance = 0;
         const textureLoader = new THREE.TextureLoader();
         this.texture = typeof texture === 'string' ? textureLoader.load(texture, (tex) => {
             if (!options.tileSize) {
@@ -34,29 +36,61 @@ class SpriteRenderer extends Renderer {
         this.tileSize = new THREE.Vector2((_c = options.tileSize) === null || _c === void 0 ? void 0 : _c.x, (_d = options.tileSize) === null || _d === void 0 ? void 0 : _d.y);
         this.tileMargin = new THREE.Vector2((_e = options.tileMargin) === null || _e === void 0 ? void 0 : _e.x, (_f = options.tileMargin) === null || _f === void 0 ? void 0 : _f.y);
         this.gridSize = new THREE.Vector2((_h = (_g = options.gridSize) === null || _g === void 0 ? void 0 : _g.x) !== null && _h !== void 0 ? _h : 1, (_k = (_j = options.gridSize) === null || _j === void 0 ? void 0 : _j.y) !== null && _k !== void 0 ? _k : 1);
-        this.frames = (_l = options.frames) !== null && _l !== void 0 ? _l : this.gridSize.x * this.gridSize.y;
+        this.castShadow = (_l = options.castShadow) !== null && _l !== void 0 ? _l : this.castShadow;
+        this.softParticleDistance = (_p = (_m = options.softParticleDistance) !== null && _m !== void 0 ? _m : (_o = options.materialOptions) === null || _o === void 0 ? void 0 : _o.softParticleDistance) !== null && _p !== void 0 ? _p : 0;
+        this.frames = (_q = options.frames) !== null && _q !== void 0 ? _q : this.gridSize.x * this.gridSize.y;
         this.geometry = new THREE.BufferGeometry();
         // Set material options and load material
         this._materialOptions = options.materialOptions;
         this.material = this.loadMaterial(this._materialOptions);
         this.points = new THREE.Points(this.geometry, this.material);
         this.points.frustumCulled = false;
-        // Get a reference to the renderer
-        this.points.onBeforeRender = (renderer, scene) => {
-            var _a;
-            if (!(renderer instanceof THREE.WebGLRenderer))
-                return;
-            const environment = this._materialOptions && 'envMap' in this._materialOptions
-                ? (_a = this._materialOptions.envMap) !== null && _a !== void 0 ? _a : scene.environment
-                : scene.environment;
-            this.updateEnvironmentMap(renderer, environment);
-        };
+        this.points.castShadow = this.castShadow;
+        // Add user data to the points so we can recognize it elsewhere
+        this.points.userData["__rmps_spriteRenderer"] = true;
     }
     setup(system) {
         system.add(this.points);
-        this.system = system;
     }
-    update(particles) {
+    update(particles, system) {
+        var _a;
+        // Update attributes
+        this.updateAttributes(particles);
+        // Should the points cast a shadow?
+        this.points.castShadow = this.castShadow;
+        // Set uniforms for soft particles
+        this.material.uniforms.softParticles.value = Boolean(this.softParticleDistance);
+        this.material.uniforms.softParticleDistance.value = this.softParticleDistance;
+        // Get depth texture for soft particles
+        if (!(system.sceneRenderer instanceof THREE.WebGLRenderer))
+            return;
+        if (!(system.scene instanceof THREE.Scene))
+            return;
+        if (!(system.sceneCamera instanceof THREE.Camera))
+            return;
+        const depthTexture = this.getSceneDepth(system.sceneRenderer, system.scene, system.sceneCamera);
+        const softParticles = this.softParticleDistance > 0 && Boolean(depthTexture);
+        this.material.uniforms.softParticles.value = softParticles;
+        if (softParticles && depthTexture) {
+            this.material.uniforms.softParticles = { value: true };
+            this.material.uniforms.sceneDepthTexture = { value: depthTexture };
+            this.material.uniforms.depthResolution = { value: new THREE.Vector2() };
+            system.sceneRenderer.getDrawingBufferSize(this.material.uniforms.depthResolution.value);
+            if (system.sceneCamera instanceof THREE.PerspectiveCamera) {
+                this.material.uniforms.depthCameraNear = { value: system.sceneCamera.near };
+                this.material.uniforms.depthCameraFar = { value: system.sceneCamera.far };
+            }
+        }
+        else {
+            this.material.uniforms.softParticles = { value: false };
+        }
+        const environment = this._materialOptions && 'envMap' in this._materialOptions
+            ? (_a = this._materialOptions.envMap) !== null && _a !== void 0 ? _a : system.scene.environment
+            : system.scene.environment;
+        // Update environment map
+        this.updateEnvironmentMap(system.sceneRenderer, environment);
+    }
+    updateAttributes(particles) {
         this.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particles.flatMap((particle) => particle.position.toArray())), 3));
         this.geometry.setAttribute('scale', new THREE.BufferAttribute(new Float32Array(particles.flatMap((particle) => particle.scale.toArray())), 3));
         this.geometry.setAttribute('rotation', new THREE.BufferAttribute(new Float32Array(particles.flatMap((particle) => particle.rotation.toArray())), 3));
@@ -71,7 +105,7 @@ class SpriteRenderer extends Renderer {
     }
     loadMaterial(options) {
         const createMaterial = this.materialType === 'basic' ? BasicSprite : UnlitSprite;
-        return createMaterial(this.texture, Object.assign(Object.assign({}, (options !== null && options !== void 0 ? options : {})), { frames: this.frames, gridSize: this.gridSize, alphaMap: this.alphaMap }));
+        return createMaterial(this.texture, Object.assign(Object.assign({}, (options !== null && options !== void 0 ? options : {})), { frames: this.frames, gridSize: this.gridSize, alphaMap: this.alphaMap, softParticleDistance: this.softParticleDistance }));
     }
     updateEnvironmentMap(renderer, environment) {
         var _a;
@@ -134,6 +168,45 @@ class SpriteRenderer extends Renderer {
         this.material.defines.CUBEUV_TEXEL_HEIGHT = `${texelHeight}`;
         this.material.defines.CUBEUV_MAX_MIP = `${maxMip}.0`;
         this.material.needsUpdate = true;
+    }
+    getSceneDepth(renderer, scene, camera) {
+        var _a, _b, _c;
+        let data = scene.userData["__rmps_sceneDepthData"];
+        if (!data) {
+            const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+            const depthTexture = new THREE.DepthTexture(size.x, size.y, THREE.UnsignedIntType);
+            const target = new THREE.WebGLRenderTarget(size.x, size.y, {
+                depthBuffer: true,
+                depthTexture,
+            });
+            data = {
+                target,
+                frame: -1,
+                rendering: false,
+            };
+            scene.userData["__rmps_sceneDepthData"] = data;
+        }
+        if (data.rendering) {
+            return (_a = data.target.depthTexture) !== null && _a !== void 0 ? _a : undefined;
+        }
+        const frame = renderer.info.render.frame;
+        if (data.frame === frame) {
+            return (_b = data.target.depthTexture) !== null && _b !== void 0 ? _b : undefined;
+        }
+        data.frame = frame;
+        data.rendering = true;
+        const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+        if (data.target.width !== size.x
+            || data.target.height !== size.y) {
+            data.target.setSize(size.x, size.y);
+        }
+        const previousTarget = renderer.getRenderTarget();
+        renderer.setRenderTarget(data.target);
+        renderer.clear();
+        renderer.render(scene, camera);
+        renderer.setRenderTarget(previousTarget);
+        data.rendering = false;
+        return (_c = data.target.depthTexture) !== null && _c !== void 0 ? _c : undefined;
     }
 }
 export default SpriteRenderer;

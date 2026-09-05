@@ -21,6 +21,13 @@ uniform sampler2D envMap;
 uniform float envIntensity;
 uniform bool hasEnvMap;
 
+uniform bool softParticles;
+uniform float softParticleDistance;
+uniform sampler2D sceneDepthTexture;
+uniform vec2 depthResolution;
+uniform float depthCameraNear;
+uniform float depthCameraFar;
+
 varying vec4 vColor;
 varying float aspectRatio;
 varying float angle;
@@ -50,6 +57,9 @@ flat in int fragFrame;
 
 // Provides PMREM environment decoding
 #include <cube_uv_reflection_fragment>
+
+// perspectiveDepthToViewZ
+#include <packing>
 
 
 vec2 rotate_vector(vec2 value, float rotation)
@@ -227,7 +237,7 @@ void main()
         {
             normal = normalize(vec3(
                 p.x,
-                p.y,
+                -p.y,
                 sqrt(1.0 - r2)
             ));
         }
@@ -519,6 +529,50 @@ void main()
 
     #endif
 
+    //
+    // SOFT PARTICLES
+    //
+
+    float finalAlpha = baseColor.a;
+
+    if (softParticles)
+    {
+        float particleViewZ =
+            perspectiveDepthToViewZ(
+                gl_FragCoord.z,
+                depthCameraNear,
+                depthCameraFar
+            );
+
+        vec2 screenUv =
+            gl_FragCoord.xy / depthResolution;
+
+        float sceneDepth =
+            texture2D(
+                sceneDepthTexture,
+                screenUv
+            ).x;
+
+        float sceneViewZ =
+            perspectiveDepthToViewZ(
+                sceneDepth,
+                depthCameraNear,
+                depthCameraFar
+            );
+
+        float depthDifference =
+            abs(particleViewZ - sceneViewZ);
+
+        float softFade =
+            smoothstep(
+                0.0,
+                softParticleDistance,
+                depthDifference
+            );
+
+        finalAlpha *= softFade;
+    }
+
 
     //
     // FINAL COLOR
@@ -531,6 +585,6 @@ void main()
     gl_FragColor =
         vec4(
             litColor,
-            baseColor.a
+            finalAlpha
         );
 }

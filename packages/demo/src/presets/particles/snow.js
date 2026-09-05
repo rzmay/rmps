@@ -24,6 +24,7 @@ export default async function createSnow() {
         rate: 70,
         duration: 10,
         looping: true,
+        radialSpeed: 0,
         initialValues: {
           lifetime: 8.5,
           speed: 1,
@@ -31,7 +32,6 @@ export default async function createSnow() {
           color: new THREE.Color('#e9f7ff'),
           alpha: 0.9,
           velocity: new THREE.Vector3(0, -0.35, 0),
-          radial: 0.02,
         },
       }),
     ],

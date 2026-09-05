@@ -8,9 +8,11 @@ interface ParticleOptions {
     color: THREE.Color;
     alpha: number;
     lifetime: number;
+    mass: number;
 }
 
 export interface ParticleStartValues {
+    lifetime: number;
     position: THREE.Vector3;
     rotation: THREE.Vector3;
     scale: THREE.Vector3;
@@ -23,6 +25,7 @@ export interface ParticleStartValues {
     speed: number;
     color: THREE.Color;
     alpha: number;
+    mass: number;
 }
 
 export interface ParticleNoiseValues {
@@ -49,11 +52,13 @@ class Particle {
 
     scalarAcceleration: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 
-    speed = 1;
+    speed: number = 1;
 
     color: THREE.Color;
 
     alpha: number;
+
+    mass: number = 0;
 
     startTime: number;
 
@@ -78,6 +83,7 @@ class Particle {
       this.scale = options.scale ?? new THREE.Vector3(1, 1, 1);
       this.color = options.color ?? new THREE.Color(0xffffff);
       this.alpha = options.alpha ?? 1;
+      this.mass = options.mass ?? 0;
 
       this.lifetime = options.lifetime ?? 5;
       this.startTime = Date.now();
@@ -97,6 +103,7 @@ class Particle {
 
     private createStartValues(): ParticleStartValues {
       return {
+        lifetime: this.lifetime,
         position: this.position.clone(),
         rotation: this.rotation.clone(),
         scale: this.scale.clone(),
@@ -107,6 +114,7 @@ class Particle {
         angularAcceleration: this.angularAcceleration.clone(),
         scalarAcceleration: this.scalarAcceleration.clone(),
         speed: this.speed,
+        mass: this.mass,
         color: this.color.clone(),
         alpha: this.alpha,
       };

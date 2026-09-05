@@ -23,20 +23,15 @@ export default async function createSpheres() {
         rate: 12,
         duration: 10,
         looping: true,
-
+        radialSpeed: 1,
         initialValues: {
-          lifetime: [4, 8],
+          lifetime: [6, 12],
           speed: 1,
-
           color: colors,
-
           scale: [
             new THREE.Vector3(0.4, 0.4, 0.4),
             new THREE.Vector3(1.0, 1.0, 1.0),
           ],
-
-          radial: 1,
-
           alpha: 1,
         },
       }),
