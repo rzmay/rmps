@@ -328,7 +328,7 @@ export class ParticleSystemGUI {
         emitter.bursts.forEach((burst, index) => {
             const item = folder.addFolder(`Burst ${index + 1}`);
             item.add(burst, 'time', 0, 1).name('Time');
-            item.add(burst, 'count').min(0).step(1).name('Count');
+            this.addDynamicValue(item, burst, 'count', 'Count');
             const actions = {
                 remove: () => {
                     emitter.bursts.splice(index, 1);
