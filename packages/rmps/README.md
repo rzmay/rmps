@@ -1,16 +1,16 @@
 # RMPS
 
-**Robert May Particle System** is a modular, extensible particle system for
+**🧅 Robert May Particle System** is a modular, extensible particle system for
 [Three.js](https://threejs.org/).
 
 [![npm](https://img.shields.io/npm/v/rmps)](https://www.npmjs.com/package/rmps)
 [![license](https://img.shields.io/npm/l/rmps)](https://github.com/rzmay/rmps)
 
-| Resource | Link |
-| --- | --- |
+| Resource    | Link                                                         |
+| ----------- | ------------------------------------------------------------ |
 | npm package | [npmjs.com/package/rmps](https://www.npmjs.com/package/rmps) |
-| GitHub repo | [github.com/rzmay/rmps](https://github.com/rzmay/rmps) |
-| Live demo | [rmps.rzmay.com](https://rmps.rzmay.com) |
+| GitHub repo | [github.com/rzmay/rmps](https://github.com/rzmay/rmps)       |
+| Live demo   | [rmps.rzmay.com](https://rmps.rzmay.com)                     |
 
 RMPS is built from small composable pieces:
 
@@ -48,12 +48,12 @@ npm install rmps three
 ```ts
 import * as THREE from "three";
 import {
-  ParticleSystem,
-  Emitter,
-  EmissionShape,
-  SpriteRenderer,
   ColorOverLifetime,
+  EmissionShape,
+  Emitter,
+  ParticleSystem,
   ScaleOverLifetime,
+  SpriteRenderer,
 } from "rmps";
 
 const particles = new ParticleSystem({
@@ -114,12 +114,12 @@ type Tag = string;
 
 The `t` argument is normalized particle lifetime, from `0` to `1`.
 
-| Form | Example | Behavior |
-| --- | --- | --- |
-| Static value | `2` | Always returns the same value. |
-| Function | `(t) => 1 - t` | Re-evaluates over normalized lifetime. |
-| Two-item array | `[0.5, 2]` | Seeded random value between min and max. |
-| Set | `new Set(["spark", "smoke"])` | Seeded random choice. |
+| Form           | Example                       | Behavior                                 |
+| -------------- | ----------------------------- | ---------------------------------------- |
+| Static value   | `2`                           | Always returns the same value.           |
+| Function       | `(t) => 1 - t`                | Re-evaluates over normalized lifetime.   |
+| Two-item array | `[0.5, 2]`                    | Seeded random value between min and max. |
+| Set            | `new Set(["spark", "smoke"])` | Seeded random choice.                    |
 
 Dynamic values are supported for numbers, vectors, and colors where the option
 type uses `DynamicValue<number>`, `DynamicValue<THREE.Vector3>`, or
@@ -167,30 +167,30 @@ interface ParticleSystemOptions {
 
 ### Simulation Space
 
-`simulationSpace` controls whether particle positions are stored relative to
-the particle system or in world space.
+`simulationSpace` controls whether particle positions are stored relative to the
+particle system or in world space.
 
-| Value | Behavior |
-| --- | --- |
-| `"local"` | Particles move with the particle system transform. |
+| Value     | Behavior                                                                                       |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `"local"` | Particles move with the particle system transform.                                             |
 | `"world"` | New particles spawn from the system transform, then remain in world space if the system moves. |
 
 Subsystems inherit the parent system's simulation space.
 
 ### Control Methods
 
-| Method | Description |
-| --- | --- |
-| `update()` | Advances the particle system. Call once per animation frame. |
-| `start()` | Starts or restarts emission. |
-| `pause()` | Pauses emission and simulation. |
-| `resume()` | Resumes from pause. |
-| `stop(clearParticles)` | Stops emission; optionally clears existing particles. |
-| `clearParticles()` | Removes all live particles. |
-| `addEmitter(emitter)` | Adds and sets up an emitter. |
-| `addModule(module)` | Adds a module. |
-| `addRenderer(renderer)` | Adds and sets up a renderer. |
-| `addSubSystem(system, options)` | Adds a child particle system emitted by particles. |
+| Method                          | Description                                                  |
+| ------------------------------- | ------------------------------------------------------------ |
+| `update()`                      | Advances the particle system. Call once per animation frame. |
+| `start()`                       | Starts or restarts emission.                                 |
+| `pause()`                       | Pauses emission and simulation.                              |
+| `resume()`                      | Resumes from pause.                                          |
+| `stop(clearParticles)`          | Stops emission; optionally clears existing particles.        |
+| `clearParticles()`              | Removes all live particles.                                  |
+| `addEmitter(emitter)`           | Adds and sets up an emitter.                                 |
+| `addModule(module)`             | Adds a module.                                               |
+| `addRenderer(renderer)`         | Adds and sets up a renderer.                                 |
+| `addSubSystem(system, options)` | Adds a child particle system emitted by particles.           |
 
 ### Event Listeners
 
@@ -213,14 +213,14 @@ system.onCollision((particle, collision) => {
 });
 ```
 
-| Method | Description |
-| --- | --- |
-| `onSpawn(listener)` | Runs when a particle is emitted. |
-| `removeSpawnListener(listener)` | Removes a spawn listener. |
-| `onDeath(listener)` | Runs when a particle reaches the end of its lifetime. |
-| `removeDeathListener(listener)` | Removes a death listener. |
-| `onCollision(listener)` | Runs when the `Collision` module reports a hit. |
-| `removeCollisionListener(listener)` | Removes a collision listener. |
+| Method                              | Description                                           |
+| ----------------------------------- | ----------------------------------------------------- |
+| `onSpawn(listener)`                 | Runs when a particle is emitted.                      |
+| `removeSpawnListener(listener)`     | Removes a spawn listener.                             |
+| `onDeath(listener)`                 | Runs when a particle reaches the end of its lifetime. |
+| `removeDeathListener(listener)`     | Removes a death listener.                             |
+| `onCollision(listener)`             | Runs when the `Collision` module reports a hit.       |
+| `removeCollisionListener(listener)` | Removes a collision listener.                         |
 
 ### Subsystems
 
@@ -283,22 +283,22 @@ interface EmitterOptions {
 
 Common `initialValues` fields include:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `position` | `THREE.Vector3` | Initial particle position. Usually supplied by the emission shape. |
-| `rotation` | `THREE.Vector3` | Initial Euler rotation. |
-| `scale` | `THREE.Vector3` | Initial particle scale. |
-| `velocity` | `THREE.Vector3` | Initial linear velocity. |
-| `angularVelocity` | `THREE.Vector3` | Initial rotational velocity. |
-| `scalarVelocity` | `THREE.Vector3` | Initial scale velocity. |
-| `acceleration` | `THREE.Vector3` | Initial linear acceleration. |
-| `angularAcceleration` | `THREE.Vector3` | Initial rotational acceleration. |
-| `scalarAcceleration` | `THREE.Vector3` | Initial scale acceleration. |
-| `lifetime` | `number` | Lifetime in seconds. |
-| `speed` | `number` | Multiplier applied to particle simulation speed. |
-| `color` | `THREE.Color` | Initial particle color. |
-| `alpha` | `number` | Initial opacity. |
-| `mass` | `number` | Particle mass for collision impulses. Defaults to `0`. |
+| Field                 | Type            | Description                                                        |
+| --------------------- | --------------- | ------------------------------------------------------------------ |
+| `position`            | `THREE.Vector3` | Initial particle position. Usually supplied by the emission shape. |
+| `rotation`            | `THREE.Vector3` | Initial Euler rotation.                                            |
+| `scale`               | `THREE.Vector3` | Initial particle scale.                                            |
+| `velocity`            | `THREE.Vector3` | Initial linear velocity.                                           |
+| `angularVelocity`     | `THREE.Vector3` | Initial rotational velocity.                                       |
+| `scalarVelocity`      | `THREE.Vector3` | Initial scale velocity.                                            |
+| `acceleration`        | `THREE.Vector3` | Initial linear acceleration.                                       |
+| `angularAcceleration` | `THREE.Vector3` | Initial rotational acceleration.                                   |
+| `scalarAcceleration`  | `THREE.Vector3` | Initial scale acceleration.                                        |
+| `lifetime`            | `number`        | Lifetime in seconds.                                               |
+| `speed`               | `number`        | Multiplier applied to particle simulation speed.                   |
+| `color`               | `THREE.Color`   | Initial particle color.                                            |
+| `alpha`               | `number`        | Initial opacity.                                                   |
+| `mass`                | `number`        | Particle mass for collision impulses. Defaults to `0`.             |
 
 Most initial values can be dynamic.
 
@@ -324,10 +324,10 @@ enum EmissionSource {
 Helpers:
 
 ```ts
-EmissionShape.Box(...boxGeometryArgs)
-EmissionShape.Sphere(...sphereGeometryArgs)
-EmissionShape.Cone(...coneGeometryArgs)
-EmissionShape.Torus(...torusGeometryArgs)
+EmissionShape.Box(...boxGeometryArgs);
+EmissionShape.Sphere(...sphereGeometryArgs);
+EmissionShape.Cone(...coneGeometryArgs);
+EmissionShape.Torus(...torusGeometryArgs);
 ```
 
 ## Built-In Modules
@@ -342,10 +342,10 @@ interface ModuleOptions {
 }
 ```
 
-| Option | Description |
-| --- | --- |
+| Option     | Description                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `priority` | Modules with priority below `0` run before movement. Modules with priority `0` or higher run after movement, sorted by priority. |
-| `tags` | Restricts the module to particles with matching tags. |
+| `tags`     | Restricts the module to particles with matching tags.                                                                            |
 
 ### VelocityOverLifetime
 
@@ -528,8 +528,8 @@ interface ExternalForcesOptions extends Partial<ModuleOptions> {
 }
 ```
 
-Samples `ParticleForceField` objects and applies their forces to particles.
-If `forceFields` is omitted, fields are discovered from the particle system's
+Samples `ParticleForceField` objects and applies their forces to particles. If
+`forceFields` is omitted, fields are discovered from the particle system's
 scene.
 
 ### Collision
@@ -786,9 +786,11 @@ const attractor = ParticleForceField.Sphere({
 
 scene.add(attractor);
 
-system.addModule(new ExternalForces({
-  forceFieldFilter: (field) => field.tags?.includes("attractor") ?? false,
-}));
+system.addModule(
+  new ExternalForces({
+    forceFieldFilter: (field) => field.tags?.includes("attractor") ?? false,
+  }),
+);
 ```
 
 Use `ParticleForceFieldHelper` to visualize a field while tuning.
@@ -798,11 +800,11 @@ Use `ParticleForceFieldHelper` to visualize a field while tuning.
 The base package includes `ThreeCollisionBackend`, which raycasts against a
 Three.js scene. For external physics engines, use the extension packages:
 
-| Package | Engine | npm |
-| --- | --- | --- |
-| `@rmps/rapier` | Rapier | [npmjs.com/package/@rmps/rapier](https://www.npmjs.com/package/@rmps/rapier) |
-| `@rmps/jolt` | Jolt Physics | [npmjs.com/package/@rmps/jolt](https://www.npmjs.com/package/@rmps/jolt) |
-| `@rmps/ammo` | Ammo.js | [npmjs.com/package/@rmps/ammo](https://www.npmjs.com/package/@rmps/ammo) |
+| Package        | Engine       | npm                                                                          |
+| -------------- | ------------ | ---------------------------------------------------------------------------- |
+| `@rmps/rapier` | Rapier       | [npmjs.com/package/@rmps/rapier](https://www.npmjs.com/package/@rmps/rapier) |
+| `@rmps/jolt`   | Jolt Physics | [npmjs.com/package/@rmps/jolt](https://www.npmjs.com/package/@rmps/jolt)     |
+| `@rmps/ammo`   | Ammo.js      | [npmjs.com/package/@rmps/ammo](https://www.npmjs.com/package/@rmps/ammo)     |
 
 ```ts
 import { Collision } from "rmps";
@@ -888,10 +890,12 @@ class GustModule extends Module {
   }
 }
 
-system.addModule(new GustModule({
-  direction: new THREE.Vector3(1, 0.2, 0),
-  tags: "smoke",
-}));
+system.addModule(
+  new GustModule({
+    direction: new THREE.Vector3(1, 0.2, 0),
+    tags: "smoke",
+  }),
+);
 ```
 
 Use `prepare(system, deltaTime)` for once-per-frame setup, `dependents` for
