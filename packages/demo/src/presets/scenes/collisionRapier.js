@@ -17,6 +17,11 @@ export default async function createRapierCollisionTest(scene) {
 
   const bodies = [];
 
+  const createInitialTransform = (mesh) => ({
+    position: mesh.position.clone(),
+    rotation: mesh.quaternion.clone(),
+  });
+
   const addBox = (mesh, type = 'fixed') => {
     const params = mesh.geometry.parameters;
 
@@ -57,6 +62,10 @@ export default async function createRapierCollisionTest(scene) {
       params.depth / 2,
     );
 
+    if (type === 'dynamic') {
+      colliderDesc.setDensity(1000);
+    }
+
     world.createCollider(colliderDesc, body);
 
     bodies.push({
@@ -77,6 +86,19 @@ export default async function createRapierCollisionTest(scene) {
 
   const dynamicBodyB =
     addBox(objects.dynamicB, 'dynamic');
+
+  const dynamicBodies = [
+    {
+      body: dynamicBodyA,
+      mesh: objects.dynamicA,
+      initial: createInitialTransform(objects.dynamicA),
+    },
+    {
+      body: dynamicBodyB,
+      mesh: objects.dynamicB,
+      initial: createInitialTransform(objects.dynamicB),
+    },
+  ];
 
   const movingBody =
     addBox(objects.movingBox, 'kinematic');
@@ -109,6 +131,7 @@ export default async function createRapierCollisionTest(scene) {
   const fixedDelta = 1 / 60;
   let accumulator = 0;
   let elapsed = 0;
+  let nextRespawn = 10;
   let frameId;
 
   world.timestep = fixedDelta;
@@ -117,6 +140,17 @@ export default async function createRapierCollisionTest(scene) {
     const frameDelta = Math.min(clock.getDelta(), 0.1);
     accumulator += frameDelta;
     elapsed += frameDelta;
+
+    if (elapsed >= nextRespawn) {
+      dynamicBodies.forEach(({ body, initial }) => {
+        body.setTranslation(initial.position, true);
+        body.setRotation(initial.rotation, true);
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      });
+
+      nextRespawn += 10;
+    }
 
     const x = Math.sin(elapsed) * 2;
     const rotation = new THREE.Quaternion().setFromEuler(
@@ -137,8 +171,9 @@ export default async function createRapierCollisionTest(scene) {
     }
 
     syncBody(objects.movingBox, movingBody);
-    syncBody(objects.dynamicA, dynamicBodyA);
-    syncBody(objects.dynamicB, dynamicBodyB);
+    dynamicBodies.forEach(({ mesh, body }) => {
+      syncBody(mesh, body);
+    });
 
     frameId = requestAnimationFrame(animate);
   };

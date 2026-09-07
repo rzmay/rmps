@@ -5,17 +5,21 @@ import { DynamicValue } from './types/DynamicValue';
 import evaluateDynamicNumber from './helpers/evaluateDynamicNumber';
 import evaluateDynamicVector from './helpers/evaluateDynamicVector3';
 import isPointInMesh from './helpers/isPointInMesh';
+import { StrictMultiple } from './types/Multiple';
+import { Tag } from './types/Tag';
+import acceptMultiple from './helpers/acceptMultiple';
+import tagsIntersect from './helpers/tagsIntersect';
 
 export interface ForceFieldOptions {
-    position?: THREE.Vector3;
-    direction?: DynamicValue<THREE.Vector3>;
-    gravity?: DynamicValue<number>;
-    rotationSpeed?: DynamicValue<number>;
-    rotationAttraction?: DynamicValue<number>;
-    drag?: DynamicValue<number>;
-    radius?: number;
-    scale?: THREE.Vector3;
-    geometry?: THREE.BufferGeometry;
+    position: THREE.Vector3;
+    direction: DynamicValue<THREE.Vector3>;
+    gravity: DynamicValue<number>;
+    rotationSpeed: DynamicValue<number>;
+    rotationAttraction: DynamicValue<number>;
+    drag: DynamicValue<number>;
+    scale: THREE.Vector3;
+    geometry: THREE.BufferGeometry;
+    tags: StrictMultiple<Tag>;
 }
 
 class ParticleForceField extends THREE.Object3D implements IParticleForceField {
@@ -23,77 +27,80 @@ class ParticleForceField extends THREE.Object3D implements IParticleForceField {
     { side: THREE.DoubleSide },
   );
 
-  static Box(options?: ForceFieldOptions, ...args: any[]): ParticleForceField {
+  static Box(options?: Partial<ForceFieldOptions>, ...args: any[]): ParticleForceField {
     return new ParticleForceField({ ...options, geometry: new THREE.BoxGeometry(...args) });
   }
 
-  static Sphere(options?: ForceFieldOptions, ...args: any[]): ParticleForceField {
+  static Sphere(options?: Partial<ForceFieldOptions>, ...args: any[]): ParticleForceField {
     return new ParticleForceField({ ...options, geometry: new THREE.SphereGeometry(...args) });
   }
 
-  static Cone(options?: ForceFieldOptions, ...args: any[]): ParticleForceField {
+  static Cone(options?: Partial<ForceFieldOptions>, ...args: any[]): ParticleForceField {
     return new ParticleForceField({ ...options, geometry: new THREE.ConeGeometry(...args) });
   }
 
-  static Torus(options?: ForceFieldOptions, ...args: any[]): ParticleForceField {
+  static Torus(options?: Partial<ForceFieldOptions>, ...args: any[]): ParticleForceField {
     return new ParticleForceField({ ...options, geometry: new THREE.TorusGeometry(...args) });
   }
 
   direction?: DynamicValue<THREE.Vector3>;
-
   gravity?: DynamicValue<number>;
 
   rotationSpeed?: DynamicValue<number>;
-
   rotationAttraction?: DynamicValue<number>;
 
   drag?: DynamicValue<number>;
 
-  radius?: number;
+  tags?: Tag[];
 
   private _geometry: THREE.BufferGeometry;
   set geometry(value: THREE.BufferGeometry) {
-  this._geometry = value;
+    this._geometry = value;
 
-  this._geometry.computeBoundingBox();
+    this._geometry.computeBoundingBox();
 
-  this._mesh.geometry = value;
-}
-get geometry(): THREE.BufferGeometry {
-  return this._geometry;
-}
+    this._mesh.geometry = value;
+  }
+  get geometry(): THREE.BufferGeometry {
+    return this._geometry;
+  }
 
   private _mesh: THREE.Mesh;
 
-  constructor(options: ForceFieldOptions) {
-  super();
+  constructor(options: Partial<ForceFieldOptions>) {
+    super();
 
-  if (options.position) {
-    this.position.copy(options.position);
+    if (options.position) {
+      this.position.copy(options.position);
+    }
+
+    if (options.scale) {
+      this.scale.copy(options.scale);
+    }
+
+    this.direction = options.direction;
+    this.gravity = options.gravity;
+    this.rotationSpeed = options.rotationSpeed;
+    this.rotationAttraction = options.rotationAttraction;
+    this.drag = options.drag;
+
+    this.tags = acceptMultiple(options.tags);
+
+    this._geometry = options.geometry ?? new THREE.SphereGeometry();
+
+    this._geometry.computeBoundingBox();
+
+    this._mesh = new THREE.Mesh(
+      this._geometry,
+      ParticleForceField._doubleSidedMaterial,
+    );
   }
-
-  if (options.scale) {
-    this.scale.copy(options.scale);
-  }
-
-  this.direction = options.direction;
-  this.gravity = options.gravity;
-  this.rotationSpeed = options.rotationSpeed;
-  this.rotationAttraction = options.rotationAttraction;
-  this.drag = options.drag;
-
-  this._geometry = options.geometry ?? new THREE.SphereGeometry();
-
-  this._geometry.computeBoundingBox();
-
-  this._mesh = new THREE.Mesh(
-    this._geometry,
-    ParticleForceField._doubleSidedMaterial,
-  );
-}
 
   getForce(particle: Particle): THREE.Vector3 {
-    if (!this.contains(particle.position)) return new THREE.Vector3();
+    if (
+      !this.contains(particle.position)
+      || (this.tags && !tagsIntersect(this.tags, particle.tags ?? []))
+    ) return new THREE.Vector3();
 
     const { time } = particle;
     const force = new THREE.Vector3();

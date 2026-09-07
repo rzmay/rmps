@@ -4,6 +4,7 @@ import loadHdri from './hdri';
 import shanghaiBund from 'url:../../assets/images/shanghai_bund_1k.hdr';
 import ferndaleStudio from 'url:../../assets/images/ferndale_studio_11_1k.hdr';
 import createCollisionTest from './collisionTest';
+import createAmmoCollisionTest from './collisionAmmo';
 import createRapierCollisionTest from './collisionRapier';
 import createJoltCollisionTest from './collisionJolt';
 import createWind from './wind';
@@ -18,6 +19,7 @@ const scenePresets = {
   'Ferndale Studio HDRI': loadHdri(ferndaleStudio),
   'Color Lights': loadColorLights,
   'Collision (builtin/Octree)': createCollisionTest,
+  'Collision (Ammo)': createAmmoCollisionTest,
   'Collision (Rapier)': createRapierCollisionTest,
   'Collision (Jolt)': createJoltCollisionTest,
   'Wind': createWind,

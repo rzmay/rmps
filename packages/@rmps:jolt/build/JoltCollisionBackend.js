@@ -34,7 +34,6 @@ class JoltCollisionBackend {
     collide(query) {
         if (this.destroyed)
             return null;
-        console.log(this.Jolt.JoltInterface.prototype.sGetFreeMemory());
         const movement = query.end.clone().sub(query.start);
         if (movement.lengthSq() === 0)
             return null;

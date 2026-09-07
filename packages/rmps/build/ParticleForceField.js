@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import evaluateDynamicNumber from './helpers/evaluateDynamicNumber';
 import evaluateDynamicVector from './helpers/evaluateDynamicVector3';
 import isPointInMesh from './helpers/isPointInMesh';
+import acceptMultiple from './helpers/acceptMultiple';
+import tagsIntersect from './helpers/tagsIntersect';
 class ParticleForceField extends THREE.Object3D {
     static Box(options, ...args) {
         return new ParticleForceField(Object.assign(Object.assign({}, options), { geometry: new THREE.BoxGeometry(...args) }));
@@ -37,12 +39,15 @@ class ParticleForceField extends THREE.Object3D {
         this.rotationSpeed = options.rotationSpeed;
         this.rotationAttraction = options.rotationAttraction;
         this.drag = options.drag;
+        this.tags = acceptMultiple(options.tags);
         this._geometry = (_a = options.geometry) !== null && _a !== void 0 ? _a : new THREE.SphereGeometry();
         this._geometry.computeBoundingBox();
         this._mesh = new THREE.Mesh(this._geometry, ParticleForceField._doubleSidedMaterial);
     }
     getForce(particle) {
-        if (!this.contains(particle.position))
+        var _a;
+        if (!this.contains(particle.position)
+            || (this.tags && !tagsIntersect(this.tags, (_a = particle.tags) !== null && _a !== void 0 ? _a : [])))
             return new THREE.Vector3();
         const { time } = particle;
         const force = new THREE.Vector3();

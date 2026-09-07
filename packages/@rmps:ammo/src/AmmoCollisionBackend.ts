@@ -1,3 +1,6 @@
+/* eslint-disable no-continue */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable class-methods-use-this */
 /* eslint-disable new-cap */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as THREE from 'three';
@@ -8,11 +11,20 @@ import type {
 } from 'rmps';
 import {
   AmmoLike,
+  AmmoRigidBodyLike,
   AmmoWorldLike,
 } from './interfaces';
 
 type AmmoCollisionData = {
   body: any;
+};
+
+type AmmoRayHit = {
+  fraction: number;
+  offset: THREE.Vector3;
+  point: THREE.Vector3;
+  normal: THREE.Vector3;
+  body?: AmmoRigidBodyLike;
 };
 
 export interface AmmoCollisionBackendOptions {
@@ -31,78 +43,42 @@ class AmmoCollisionBackend implements ICollisionBackend {
   }
 
   collide(query: CollisionQuery): CollisionHit | null {
-    const shape = new this.Ammo.btSphereShape(query.radius);
+    const movement = query.end.clone().sub(query.start);
 
-    const from = new this.Ammo.btTransform();
-    const to = new this.Ammo.btTransform();
+    if (movement.lengthSq() === 0) return null;
 
-    from.setIdentity();
-    to.setIdentity();
+    const direction = movement.clone().normalize();
+    const basis = this._getSweepBasis(direction, query.radius);
 
-    const fromPosition = new this.Ammo.btVector3(
-      query.start.x,
-      query.start.y,
-      query.start.z,
-    );
+    let hit: AmmoRayHit | null = null;
 
-    const toPosition = new this.Ammo.btVector3(
-      query.end.x,
-      query.end.y,
-      query.end.z,
-    );
+    for (const offset of basis) {
+      const rayHit = this._castRay(
+        query.start.clone().add(offset),
+        query.end.clone().add(offset),
+        movement,
+        offset,
+      );
 
-    from.setOrigin(fromPosition);
-    to.setOrigin(toPosition);
+      if (!rayHit) continue;
 
-    const callback = new this.Ammo.ClosestConvexResultCallback(
-      fromPosition,
-      toPosition,
-    );
-
-    this.world.convexSweepTest(
-      shape,
-      from,
-      to,
-      callback,
-    );
-
-    if (!callback.hasHit()) {
-      this._destroy(shape, from, to, fromPosition, toPosition, callback);
-      return null;
+      if (!hit || rayHit.fraction < hit.fraction) {
+        hit = rayHit;
+      }
     }
 
-    const hitPoint = callback.get_m_hitPointWorld();
-    const hitNormal = callback.get_m_hitNormalWorld();
+    if (!hit) return null;
 
-    const point = new THREE.Vector3(
-      hitPoint.x(),
-      hitPoint.y(),
-      hitPoint.z(),
-    );
-
-    const normal = new THREE.Vector3(
-      hitNormal.x(),
-      hitNormal.y(),
-      hitNormal.z(),
-    ).normalize();
-
-    const fraction = callback.get_m_closestHitFraction();
-    const position = query.start
+    const position = hit.point
       .clone()
-      .lerp(query.end, fraction)
-      .addScaledVector(normal, 1e-4);
-
-    const collisionObject = callback.get_m_hitCollisionObject();
-
-    this._destroy(shape, from, to, fromPosition, toPosition, callback);
-
-    const body = this.Ammo.btRigidBody.upcast(collisionObject);
+      .sub(hit.offset)
+      .addScaledVector(hit.normal, query.radius + 1e-4);
 
     return {
-      point,
-      normal,
+      point: hit.point,
+      normal: hit.normal,
       position,
-      backendData: { body },
+      backendData: { body: hit.body },
     };
   }
 
@@ -113,6 +89,12 @@ class AmmoCollisionBackend implements ICollisionBackend {
     const data = hit.backendData as AmmoCollisionData | undefined;
 
     if (!data?.body) return;
+    if (
+      typeof data.body.getCenterOfMassPosition !== 'function'
+      || typeof data.body.applyImpulse !== 'function'
+    ) {
+      return;
+    }
 
     const ammoImpulse = new this.Ammo.btVector3(
       impulse.x,
@@ -142,6 +124,111 @@ class AmmoCollisionBackend implements ICollisionBackend {
     );
 
     this._destroy(ammoImpulse, worldPoint, relativePosition);
+  }
+
+  private _castRay(
+    start: THREE.Vector3,
+    end: THREE.Vector3,
+    movement: THREE.Vector3,
+    offset: THREE.Vector3,
+  ): AmmoRayHit | null {
+    const fromPosition = new this.Ammo.btVector3(
+      start.x,
+      start.y,
+      start.z,
+    );
+
+    const toPosition = new this.Ammo.btVector3(
+      end.x,
+      end.y,
+      end.z,
+    );
+
+    const callback = new this.Ammo.ClosestRayResultCallback(
+      fromPosition,
+      toPosition,
+    );
+
+    this.world.rayTest(fromPosition, toPosition, callback);
+
+    if (!callback.hasHit()) {
+      this._destroy(fromPosition, toPosition, callback);
+      return null;
+    }
+
+    const hitNormal = callback.get_m_hitNormalWorld();
+    const normal = new THREE.Vector3(
+      hitNormal.x(),
+      hitNormal.y(),
+      hitNormal.z(),
+    ).normalize();
+
+    if (movement.dot(normal) >= -1e-6) {
+      this._destroy(fromPosition, toPosition, callback);
+      return null;
+    }
+
+    const hitPoint = callback.get_m_hitPointWorld();
+    const point = new THREE.Vector3(
+      hitPoint.x(),
+      hitPoint.y(),
+      hitPoint.z(),
+    );
+
+    const collisionObject = callback.get_m_collisionObject();
+    const body = this._getRigidBody(collisionObject);
+    const fraction = callback.get_m_closestHitFraction();
+
+    this._destroy(fromPosition, toPosition, callback);
+
+    return {
+      body,
+      fraction,
+      normal,
+      offset,
+      point,
+    };
+  }
+
+  private _getSweepBasis(
+    direction: THREE.Vector3,
+    radius: number,
+  ): THREE.Vector3[] {
+    if (radius <= 0) return [new THREE.Vector3()];
+
+    const tangent = new THREE.Vector3(0, 1, 0)
+      .cross(direction);
+
+    if (tangent.lengthSq() < 1e-6) {
+      tangent.set(1, 0, 0).cross(direction);
+    }
+
+    tangent.normalize().multiplyScalar(radius);
+
+    const bitangent = direction
+      .clone()
+      .cross(tangent)
+      .normalize()
+      .multiplyScalar(radius);
+
+    return [
+      new THREE.Vector3(),
+      tangent,
+      tangent.clone().negate(),
+      bitangent,
+      bitangent.clone().negate(),
+    ];
+  }
+
+  private _getRigidBody(collisionObject: any): AmmoRigidBodyLike | undefined {
+    if (this.Ammo.castObject) {
+      return this.Ammo.castObject(
+        collisionObject,
+        this.Ammo.btRigidBody,
+      );
+    }
+
+    return this.Ammo.btRigidBody.prototype.upcast?.(collisionObject);
   }
 
   private _destroy(...objects: any[]): void {

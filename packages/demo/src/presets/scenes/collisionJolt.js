@@ -62,6 +62,11 @@ export default async function createJoltCollisionTest(scene) {
   const objects = createCollisionObjects(true);
   scene.add(objects.group);
 
+  const createInitialTransform = (mesh) => ({
+    position: mesh.position.clone(),
+    rotation: mesh.quaternion.clone(),
+  });
+
   const addBox = (mesh, {
     motion = Jolt.EMotionType_Static,
     layer = 0,
@@ -135,8 +140,16 @@ export default async function createJoltCollisionTest(scene) {
   });
 
   const dynamicBodies = [
-    { mesh: dynamicA, body: dynamicBodyA },
-    { mesh: dynamicB, body: dynamicBodyB },
+    {
+      mesh: dynamicA,
+      body: dynamicBodyA,
+      initial: createInitialTransform(dynamicA),
+    },
+    {
+      mesh: dynamicB,
+      body: dynamicBodyB,
+      initial: createInitialTransform(dynamicB),
+    },
   ];
 
   const movingBody = addBox(objects.movingBox, {
@@ -154,6 +167,8 @@ export default async function createJoltCollisionTest(scene) {
   scene.userData["__rmps_activeCollisionBackend"] = backend;
 
   let previous = performance.now();
+  let elapsed = 0;
+  let nextRespawn = 10;
   let frameId;
 
   const animate = (time) => {
@@ -163,6 +178,42 @@ export default async function createJoltCollisionTest(scene) {
     );
 
     previous = time;
+    elapsed += delta;
+
+    if (elapsed >= nextRespawn) {
+      dynamicBodies.forEach(({ body, initial }) => {
+        const position = new Jolt.RVec3(
+          initial.position.x,
+          initial.position.y,
+          initial.position.z,
+        );
+
+        const rotation = new Jolt.Quat(
+          initial.rotation.x,
+          initial.rotation.y,
+          initial.rotation.z,
+          initial.rotation.w,
+        );
+
+        const zero = new Jolt.Vec3(0, 0, 0);
+        const id = body.GetID();
+
+        bodyInterface.SetPositionAndRotation(
+          id,
+          position,
+          rotation,
+          Jolt.EActivation_Activate,
+        );
+        bodyInterface.SetLinearVelocity(id, zero);
+        bodyInterface.SetAngularVelocity(id, zero);
+
+        Jolt.destroy(position);
+        Jolt.destroy(rotation);
+        Jolt.destroy(zero);
+      });
+
+      nextRespawn += 10;
+    }
 
     const seconds = time / 1000;
     const x = Math.sin(seconds) * 2;

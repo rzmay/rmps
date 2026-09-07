@@ -15,31 +15,35 @@ export interface AmmoRigidBodyLike {
 }
 
 export interface AmmoLike {
-  btSphereShape: new (radius: number) => any;
-  btTransform: new () => any;
   btVector3: new (
     x: number,
     y: number,
     z: number,
   ) => AmmoVector3Like;
 
-  ClosestConvexResultCallback: new (
+  ClosestRayResultCallback: new (
     from: AmmoVector3Like,
     to: AmmoVector3Like,
   ) => any;
 
   btRigidBody: {
-    upcast(object: any): AmmoRigidBodyLike;
+    prototype: {
+      upcast?(object: any): AmmoRigidBodyLike;
+    };
   };
+
+  castObject?(
+    object: any,
+    klass: unknown,
+  ): AmmoRigidBodyLike;
 
   destroy(object: unknown): void;
 }
 
 export interface AmmoWorldLike {
-  convexSweepTest(
-    shape: any,
-    from: any,
-    to: any,
+  rayTest(
+    from: AmmoVector3Like,
+    to: AmmoVector3Like,
     callback: any,
   ): void;
 }
