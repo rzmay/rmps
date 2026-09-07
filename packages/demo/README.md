@@ -1,70 +1,212 @@
-# Getting Started with Create React App
+# RMPS Demo
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Interactive browser demo for
+[RMPS](https://www.npmjs.com/package/rmps), the Robert May Particle System for
+[Three.js](https://threejs.org/).
 
-## Available Scripts
+| Resource | Link |
+| --- | --- |
+| Live demo | [rmps.rzmay.com](https://rmps.rzmay.com) |
+| npm package | [npmjs.com/package/rmps](https://www.npmjs.com/package/rmps) |
+| GitHub repo | [github.com/rzmay/rmps](https://github.com/rzmay/rmps) |
 
-In the project directory, you can run:
+This app is the development playground and showcase for the RMPS package. It
+uses React, React Three Fiber, Parcel, lil-gui, and the local monorepo packages
+for `rmps` and the optional physics integrations.
 
-### `yarn start`
+## What It Shows
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+The demo includes particle presets for common renderer and module combinations:
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- Fire
+- Fireball
+- Smoke
+- Additive Smoke
+- Snow
+- Suzanne
+- Spheres
+- Cube Instances
+- Suzanne Instances
+- Particle Trail
+- Ribbon Trail
+- Collision
+- Bubbles with positional audio
+- Fireworks with subsystems
+- Cubes and Spheres with tags
 
-### `yarn test`
+It also includes scene presets for testing environment behavior:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Checkerboard
+- HDRI lighting
+- Color lights
+- Built-in Three.js collision
+- Ammo collision
+- Rapier collision
+- Jolt collision
+- Wind force field
+- Repulsor / attractor force fields
+- Vortex force field
+- World simulation space
 
-### `yarn build`
+## Demo UI
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The right-side editor is powered by `lil-gui`.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Use it to:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- switch particle presets
+- switch scene presets
+- start, pause, resume, stop, and clear the active particle system
+- edit system gravity and simulation space
+- tune emitter values, bursts, tags, and emission shapes
+- edit subsystem trigger and inheritance options
+- add and edit built-in modules
+- add and edit built-in renderers
+- toggle generated code output with `Show code`
 
-### `yarn eject`
+The generated code panel is intended as a quick way to inspect how the current
+particle system is configured.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Local Development
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+From the repo root:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```bash
+npm install
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+Build the local RMPS packages before running the demo:
 
-## Learn More
+```bash
+npm run build --workspace packages/rmps
+npm run build --workspace @rmps/rapier
+npm run build --workspace @rmps/jolt
+npm run build --workspace @rmps/ammo
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Start the demo:
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```bash
+npm start --workspace packages/demo
+```
 
-### Code Splitting
+Parcel prints the local URL, usually:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```txt
+http://localhost:1234
+```
 
-### Analyzing the Bundle Size
+## Building
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Build the demo from the repo root:
 
-### Making a Progressive Web App
+```bash
+npm run build --workspace packages/demo
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+The static output is written to:
 
-### Advanced Configuration
+```txt
+packages/demo/dist
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The demo build script currently uses:
 
-### Deployment
+```bash
+parcel build --no-optimize --no-scope-hoist
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+This keeps constructor names readable in the browser editor and generated-code
+view.
 
-### `yarn build` fails to minify
+## Monorepo Package Notes
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The demo imports `rmps`, `@rmps/rapier`, `@rmps/jolt`, and `@rmps/ammo` as npm
+workspace packages. Until the packages are published, production builds should
+build those workspaces from the monorepo before building the demo.
+
+The publishable packages each have a `prepack` script, so `npm pack` and
+`npm publish` build their `build/**/*` output automatically. The demo itself is
+not published to npm.
+
+## Render Deployment
+
+Use a Render Static Site and leave the root directory set to the repository
+root. The demo needs access to sibling workspace packages during install and
+build.
+
+Recommended Render settings:
+
+```txt
+Service type: Static Site
+Root Directory: repo root / blank
+Build Command: npm install && npm run build --workspace packages/rmps && npm run build --workspace @rmps/rapier && npm run build --workspace @rmps/jolt && npm run build --workspace @rmps/ammo && npm run build --workspace packages/demo
+Publish Directory: packages/demo/dist
+```
+
+Equivalent `render.yaml`:
+
+```yaml
+services:
+  - type: web
+    runtime: static
+    name: rmps-demo
+    buildCommand: npm install && npm run build --workspace packages/rmps && npm run build --workspace @rmps/rapier && npm run build --workspace @rmps/jolt && npm run build --workspace @rmps/ammo && npm run build --workspace packages/demo
+    staticPublishPath: packages/demo/dist
+```
+
+## Project Structure
+
+```txt
+packages/demo
+├── public
+├── src
+│   ├── assets
+│   ├── components
+│   ├── gui
+│   ├── pages
+│   └── presets
+│       ├── particles
+│       └── scenes
+└── package.json
+```
+
+Useful places to start:
+
+- `src/components/ParticleSystemDisplay.js`: loads the active particle preset
+  and updates the particle system each frame.
+- `src/gui/ParticleSystemGUI.js`: editor controls, preset switching, and code
+  serialization.
+- `src/presets/particles`: particle system examples.
+- `src/presets/scenes`: scene setup examples, including physics backends.
+
+## Adding Presets
+
+Add a particle preset by creating a factory in `src/presets/particles`, then
+registering it in `src/presets/particles/index.js`.
+
+```js
+const particlePresets = {
+  Fire: createFire,
+  "My Preset": createMyPreset,
+};
+```
+
+Add a scene preset by creating a loader in `src/presets/scenes`, then
+registering it in `src/presets/scenes/index.js`.
+
+Scene loaders can return a cleanup function:
+
+```js
+export default function createScene(scene) {
+  // Add lights, meshes, physics worlds, helpers, etc.
+
+  return () => {
+    // Remove scene objects and dispose resources.
+  };
+}
+```
+
+## License
+
+MIT
