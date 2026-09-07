@@ -97,6 +97,8 @@ class ParticleForceField extends THREE.Object3D implements IParticleForceField {
   }
 
   getForce(particle: Particle): THREE.Vector3 {
+    this.updateWorldMatrix(true, false);
+
     if (
       !this.contains(particle.position)
       || (this.tags && !tagsIntersect(this.tags, particle.tags ?? []))

@@ -13,6 +13,7 @@ declare class ExternalForces extends Module {
     explicitForceFields?: IParticleForceField[];
     forceFieldFilter?: (forceField: ParticleForceField) => boolean;
     private forceFields;
+    private particleSystem?;
     constructor(options: ExternalForcesOptions);
     prepare(particleSystem: ParticleSystem, deltaTime: number): void;
 }

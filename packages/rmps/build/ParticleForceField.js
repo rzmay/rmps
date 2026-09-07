@@ -46,6 +46,7 @@ class ParticleForceField extends THREE.Object3D {
     }
     getForce(particle) {
         var _a;
+        this.updateWorldMatrix(true, false);
         if (!this.contains(particle.position)
             || (this.tags && !tagsIntersect(this.tags, (_a = particle.tags) !== null && _a !== void 0 ? _a : [])))
             return new THREE.Vector3();

@@ -28,7 +28,7 @@
   "source": "public/index.html",
   "scripts": {
     "start": "parcel",
-    "build": "parcel build"
+    "build": "parcel build --no-optimize --no-scope-hoist"
   },
   "browserslist": {
     "production": [

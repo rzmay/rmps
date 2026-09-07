@@ -10,8 +10,8 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 import * as THREE from 'three';
-import unlitSpriteVert from '../shaders/UnlitSprite.vert';
-import unlitSpriteFrag from '../shaders/UnlitSprite.frag';
+import unlitSpriteVert from '../shaders/UnlitSprite.vert.js';
+import unlitSpriteFrag from '../shaders/UnlitSprite.frag.js';
 const UnlitSprite = (texture, options = {}) => {
     const { gridSize, frames, alphaMap, softParticles, softParticleDistance = 0 } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap", "softParticles", "softParticleDistance"]);
     return new THREE.ShaderMaterial(Object.assign({ vertexShader: unlitSpriteVert, fragmentShader: unlitSpriteFrag, uniforms: {

@@ -10,8 +10,8 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 import * as THREE from 'three';
-import basicSpriteVert from '../shaders/BasicSprite.vert';
-import basicSpriteFrag from '../shaders/BasicSprite.frag';
+import basicSpriteVert from '../shaders/BasicSprite.vert.js';
+import basicSpriteFrag from '../shaders/BasicSprite.frag.js';
 const BasicSprite = (texture, options = {}) => {
     const { gridSize, frames, alphaMap, normalMap, normalStrength = 1, normalLighting, sphericalNormals, roughness = 0.5, roughnessMap, envMap, envIntensity = 1.0, softParticles, softParticleDistance = 0 } = options, materialOptions = __rest(options, ["gridSize", "frames", "alphaMap", "normalMap", "normalStrength", "normalLighting", "sphericalNormals", "roughness", "roughnessMap", "envMap", "envIntensity", "softParticles", "softParticleDistance"]);
     return new THREE.ShaderMaterial(Object.assign({ vertexShader: basicSpriteVert, fragmentShader: basicSpriteFrag, uniforms: THREE.UniformsUtils.merge([
