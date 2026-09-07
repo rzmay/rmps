@@ -90,7 +90,7 @@ class LightRenderer extends Renderer {
     }
 
     setup(system: ParticleSystem): void {
-      system.add(this.lightContainer);
+      system.addRendererObject(this.lightContainer);
     }
 
     _update(particles: Particle[]): void {

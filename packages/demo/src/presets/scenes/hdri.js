@@ -3,8 +3,6 @@ import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
 
 export default function loadHdri(url) {
   return (scene) => {
-    const previousBackground = scene.background;
-    const previousEnvironment = scene.environment;
     let disposed = false;
     let environmentTexture = null;
 
@@ -33,8 +31,8 @@ export default function loadHdri(url) {
 
       if (environmentTexture) environmentTexture.dispose();
 
-      scene.background = previousBackground;
-      scene.environment = previousEnvironment;
+      scene.background = new THREE.Color('#17191c');
+      scene.environment = null;
     };
   }
 }

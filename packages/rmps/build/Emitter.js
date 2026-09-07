@@ -79,7 +79,7 @@ class Emitter {
     setup(particleSystem) {
         particleSystem.add(this.source);
     }
-    update(particles) {
+    update(particles, context) {
         const now = Date.now();
         const time = ((now - this._startTime) / (this.duration * 1000));
         const spawned = [];
@@ -90,7 +90,7 @@ class Emitter {
             const secondsPerParticle = (1000 / evaluateDynamicNumber(this.rate, time));
             const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
             for (let i = 0; i < particlesDue; i += 1) {
-                const particle = this.spawnParticle(particles, time);
+                const particle = this.spawnParticle(particles, time, context);
                 spawned.push(particle);
                 this._lastSpawn = now;
             }
@@ -99,7 +99,7 @@ class Emitter {
                 if (!burst.fired && burst.time * this.duration * 1000 < now - this._startTime) {
                     const count = evaluateDynamicNumber(burst.count);
                     for (let j = 0; j < Math.floor(count); j += 1) {
-                        const particle = this.spawnParticle(particles, time);
+                        const particle = this.spawnParticle(particles, time, context);
                         spawned.push(particle);
                     }
                     burst.fired = true;
@@ -115,11 +115,11 @@ class Emitter {
         return spawned;
     }
     updateAt(particles, context) {
-        var _a, _b;
+        var _a, _b, _c;
         const now = Date.now();
-        const state = this.getContextState(context.key, now);
-        const duration = (_a = context.duration) !== null && _a !== void 0 ? _a : this.duration;
-        const time = (_b = context.time) !== null && _b !== void 0 ? _b : ((now - state.startTime) / (duration * 1000));
+        const state = this.getContextState((_a = context.key) !== null && _a !== void 0 ? _a : '__default', now);
+        const duration = (_b = context.duration) !== null && _b !== void 0 ? _b : this.duration;
+        const time = (_c = context.time) !== null && _c !== void 0 ? _c : ((now - state.startTime) / (duration * 1000));
         const spawned = [];
         if (context.time === undefined && now - state.startTime >= duration * 1000) {
             if (!this.looping)

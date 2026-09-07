@@ -64,7 +64,7 @@ class TrailRenderer extends Renderer {
         this.mesh.frustumCulled = false;
     }
     setup(system) {
-        system.add(this.mesh);
+        system.addRendererObject(this.mesh);
     }
     _update(particles, system) {
         this.particles = particles;

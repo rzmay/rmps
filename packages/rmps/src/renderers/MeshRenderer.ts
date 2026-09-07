@@ -64,7 +64,7 @@ class MeshRenderer extends Renderer {
     }
 
     setup(system: ParticleSystem): void {
-      system.add(this.instances);
+      system.addRendererObject(this.instances);
     }
 
     _update(particles: Particle[]): void {

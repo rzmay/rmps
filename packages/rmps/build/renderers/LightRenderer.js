@@ -34,7 +34,7 @@ class LightRenderer extends Renderer {
         this.alphaAffectsIntensity = (_m = options.alphaAffectsIntensity) !== null && _m !== void 0 ? _m : false;
     }
     setup(system) {
-        system.add(this.lightContainer);
+        system.addRendererObject(this.lightContainer);
     }
     _update(particles) {
         const lightParticles = this._getLightParticles(particles);

@@ -177,7 +177,7 @@ class TrailRenderer extends Renderer {
   }
 
   setup(system: ParticleSystem): void {
-    system.add(this.mesh);
+    system.addRendererObject(this.mesh);
   }
 
   _update(particles: Particle[], system: ParticleSystem): void {

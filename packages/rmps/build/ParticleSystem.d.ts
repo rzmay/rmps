@@ -13,6 +13,7 @@ interface ParticleSystemOptions {
     modules: Multiple<Module>;
     gravity: THREE.Vector3;
     gravityModifier: DynamicValue<number>;
+    simulationSpace: SimulationSpace;
 }
 export interface SubSystemOptions {
     shouldEmit: boolean | ((particle: Particle) => boolean);
@@ -28,6 +29,7 @@ export interface SubSystemOptions {
     inheritMass: boolean;
 }
 export type ParticleListener = (particle: Particle) => void;
+export type SimulationSpace = 'local' | 'world';
 declare class ParticleSystem extends THREE.Object3D {
     particles: Particle[];
     emitters: Emitter[];
@@ -36,6 +38,9 @@ declare class ParticleSystem extends THREE.Object3D {
     subSystems: Map<ParticleSystem, SubSystemOptions>;
     gravity: THREE.Vector3;
     gravityModifier: DynamicValue<number>;
+    private _simulationSpace;
+    get simulationSpace(): SimulationSpace;
+    set simulationSpace(value: SimulationSpace);
     private _scene?;
     get scene(): THREE.Scene<THREE.Object3DEventMap> | undefined;
     private _camera?;
@@ -45,6 +50,7 @@ declare class ParticleSystem extends THREE.Object3D {
     private deltaTime;
     private lastFrame;
     private _subSystemParent?;
+    get isSubSystem(): boolean;
     private _deathListeners;
     private _spawnListeners;
     private _collisionListeners;
@@ -52,7 +58,8 @@ declare class ParticleSystem extends THREE.Object3D {
     private _nextEmissionRunId;
     private _playing;
     private _paused;
-    private _blurred;
+    private readonly _rendererObjects;
+    private readonly _worldRendererRoot;
     constructor(options?: Partial<ParticleSystemOptions>);
     update(): void;
     private _calculateDeltaTime;
@@ -74,6 +81,7 @@ declare class ParticleSystem extends THREE.Object3D {
     removeModule(module: Module): this;
     addRenderer(renderer: Renderer): this;
     removeRenderer(renderer: Renderer): this;
+    addRendererObject(object: THREE.Object3D): void;
     addSubSystem(subSystem: ParticleSystem, options: Partial<SubSystemOptions>): this;
     removeSubSystem(subSystem: ParticleSystem): this;
     onDeath(listener: ParticleListener): this;
@@ -86,5 +94,11 @@ declare class ParticleSystem extends THREE.Object3D {
     private _notifyDeath;
     private _notifySpawn;
     private cleanup;
+    private getEmitterContext;
+    private getRendererParent;
+    private syncRendererParents;
+    private getWorldRendererParent;
+    private convertParticlesToSimulationSpace;
+    private localDirectionToWorld;
 }
 export default ParticleSystem;

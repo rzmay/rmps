@@ -25,8 +25,8 @@ interface EmitterOptions {
     tagSelection: TagSelectionMethod;
 }
 export interface EmissionContext {
-    key: string;
-    transform: THREE.Matrix4;
+    key?: string;
+    transform?: THREE.Matrix4;
     time?: number;
     duration?: number;
     color?: THREE.Color;
@@ -57,7 +57,7 @@ declare class Emitter {
     resume(): void;
     stop(): void;
     setup(particleSystem: ParticleSystem): void;
-    update(particles: Particle[]): Particle[];
+    update(particles: Particle[], context?: EmissionContext): Particle[];
     updateAt(particles: Particle[], context: EmissionContext): Particle[];
     clearContext(key: string): void;
     private getContextState;

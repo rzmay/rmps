@@ -175,6 +175,7 @@ export class ParticleSystemGUI {
     buildSystemFolder(root) {
         const folder = root.addFolder('System');
         folder.domElement.classList.add('psgui-system');
+        folder.add(this.system, 'simulationSpace', ['local', 'world']).name('Simulation Space');
         this.addVector3(folder, this.system.gravity, 'Gravity');
         this.addDynamicValue(folder, this.system, 'gravityModifier', 'Gravity Modifier');
         const actions = {
@@ -958,6 +959,7 @@ export class ParticleSystemGUI {
             `const ${variableName} = new ParticleSystem({`,
             `  gravity: ${this.serializeValue(system.gravity)},`,
             `  gravityModifier: ${this.serializeValue(system.gravityModifier)},`,
+            `  simulationSpace: ${JSON.stringify(system.simulationSpace)},`,
             '  emitters: [',
             this.indent(emitters, 4),
             '  ],',

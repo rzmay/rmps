@@ -17,7 +17,7 @@ class MeshRenderer extends Renderer {
         this.preprocessMaterial(this.mesh.material);
     }
     setup(system) {
-        system.add(this.instances);
+        system.addRendererObject(this.instances);
     }
     _update(particles) {
         this.instances.count = particles.length;

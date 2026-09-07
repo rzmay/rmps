@@ -1,10 +1,7 @@
 import * as THREE from 'three';
 
 export default function loadCheckerboard(scene) {
-  const previousBackground = scene.background;
-  const previousEnvironment = scene.environment;
-
-  scene.background = new THREE.Color('#202020');
+  scene.background = new THREE.Color('#17191c');
   scene.environment = null;
 
   const ambient = new THREE.AmbientLight(0xffffff, 0.25);
@@ -41,7 +38,5 @@ export default function loadCheckerboard(scene) {
     floorGeometry.dispose();
     floorMaterial.dispose();
     checkerTexture.dispose();
-    scene.background = previousBackground;
-    scene.environment = previousEnvironment;
   };
 }

@@ -9,6 +9,7 @@ import createJoltCollisionTest from './collisionJolt';
 import createWind from './wind';
 import createVortex from './vortex';
 import createRepulsorAttractor from './repulsor';
+import createSimulationSpace from './simulationSpace';
 
 
 const scenePresets = {
@@ -22,6 +23,7 @@ const scenePresets = {
   'Wind': createWind,
   'Repulsor / Attractor': createRepulsorAttractor,
   'Vortex': createVortex,
+  'World Simulation Space': createSimulationSpace,
 };
 
 export default scenePresets;

@@ -122,7 +122,7 @@ class SpriteRenderer extends Renderer {
   }
 
   setup(system: ParticleSystem) {
-    system.add(this.points);
+    system.addRendererObject(this.points);
   }
 
   _update(particles: Particle[], system: ParticleSystem): void {

@@ -88,15 +88,19 @@ class Collision extends Module {
   private collide(particle: Particle): void {
     if (!this.backend || !this._system) return;
 
-    const localStart = particle.data["__rmps_collision_prevPosition"] as THREE.Vector3;
-    const localEnd = particle.position;
+    const startPosition = particle.data["__rmps_collision_prevPosition"] as THREE.Vector3;
+    const endPosition = particle.position;
 
-    if (localStart.equals(localEnd)) return;
+    if (startPosition.equals(endPosition)) return;
 
     this._system.updateWorldMatrix(true, false);
 
-    const start = this._system.localToWorld(localStart.clone());
-    const end = this._system.localToWorld(localEnd.clone());
+    const start = this._system.simulationSpace === 'world'
+      ? startPosition.clone()
+      : this._system.localToWorld(startPosition.clone());
+    const end = this._system.simulationSpace === 'world'
+      ? endPosition.clone()
+      : this._system.localToWorld(endPosition.clone());
 
     const radius = this.getParticleRadius(particle);
 
@@ -113,18 +117,20 @@ class Collision extends Module {
     this.collisionListeners.forEach((listener) => listener(particle, hit));
     this._system.notifyCollision(particle, hit);
 
-    const inverseWorld = this._system.matrixWorld.clone().invert();
+    if (this._system.simulationSpace === 'local') {
+      const inverseWorld = this._system.matrixWorld.clone().invert();
 
-    hit.point = this._system.worldToLocal(hit.point.clone());
+      hit.point = this._system.worldToLocal(hit.point.clone());
 
-    if (hit.position) {
-      hit.position = this._system.worldToLocal(hit.position.clone());
+      if (hit.position) {
+        hit.position = this._system.worldToLocal(hit.position.clone());
+      }
+
+      hit.normal = hit.normal
+        .clone()
+        .transformDirection(inverseWorld)
+        .normalize();
     }
-
-    hit.normal = hit.normal
-      .clone()
-      .transformDirection(inverseWorld)
-      .normalize();
 
     this.resolvePosition(particle, hit, radius);
 

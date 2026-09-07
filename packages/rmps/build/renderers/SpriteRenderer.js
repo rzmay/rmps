@@ -55,7 +55,7 @@ class SpriteRenderer extends Renderer {
         this.points.userData[SPRITE_RENDERER_USER_DATA_KEY] = true;
     }
     setup(system) {
-        system.add(this.points);
+        system.addRendererObject(this.points);
     }
     _update(particles, system) {
         var _a;

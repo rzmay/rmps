@@ -19,6 +19,7 @@ interface ParticleSystemOptions {
     modules: Multiple<Module>;
     gravity: THREE.Vector3;
     gravityModifier: DynamicValue<number>;
+    simulationSpace: SimulationSpace;
 }
 
 export interface SubSystemOptions {
@@ -44,6 +45,7 @@ interface SubSystemEmissionRun {
 }
 
 export type ParticleListener = (particle: Particle) => void;
+export type SimulationSpace = 'local' | 'world';
 
 class ParticleSystem extends THREE.Object3D {
   particles: Particle[] = [];
@@ -54,6 +56,21 @@ class ParticleSystem extends THREE.Object3D {
 
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
+
+  private _simulationSpace: SimulationSpace = 'local';
+  get simulationSpace(): SimulationSpace {
+    return this._simulationSpace;
+  }
+  set simulationSpace(value: SimulationSpace) {
+    if (value === this._simulationSpace) return;
+
+    this.convertParticlesToSimulationSpace(value);
+    this._simulationSpace = value;
+    this.subSystems.forEach((_options, subSystem) => {
+      subSystem.simulationSpace = value;
+    });
+    this.syncRendererParents();
+  }
 
   private _scene?: THREE.Scene;
   get scene() { return this._scene; }
@@ -68,6 +85,8 @@ class ParticleSystem extends THREE.Object3D {
   private lastFrame: number;
 
   private _subSystemParent?: ParticleSystem;
+  get isSubSystem(): boolean { return !!this._subSystemParent; }
+
   private _deathListeners: ParticleListener[] = [];
   private _spawnListeners: ParticleListener[] = [];
   private _collisionListeners: CollisionListener[] = [];
@@ -77,7 +96,9 @@ class ParticleSystem extends THREE.Object3D {
 
   private _playing = true;
   private _paused = false;
-  private _blurred = false;
+
+  private readonly _rendererObjects = new Set<THREE.Object3D>();
+  private readonly _worldRendererRoot = new THREE.Group();
 
   constructor(options: Partial<ParticleSystemOptions> = {}) {
     super();
@@ -91,6 +112,8 @@ class ParticleSystem extends THREE.Object3D {
     // but if either gravity or gravityModifier are specified, they will be used.
     this.gravity = options.gravity ?? new THREE.Vector3(0, -9.81, 0);
     this.gravityModifier = options.gravityModifier ?? (options.gravity ? 1 : 0);
+    this._simulationSpace = options.simulationSpace ?? this._simulationSpace;
+    this._worldRendererRoot.name = 'ParticleSystem World Renderers';
 
     this.lastFrame = Date.now();
 
@@ -125,10 +148,11 @@ class ParticleSystem extends THREE.Object3D {
     // Check for pauses
     if (this._paused) return;
 
+    this.syncRendererParents();
     this._calculateDeltaTime();
 
     if (this._playing) this.emitters.forEach((emitter) => {
-      const particles = emitter.update(this.particles);
+      const particles = emitter.update(this.particles, this.getEmitterContext());
       particles.forEach((p) => this._notifySpawn(p));
     });
 
@@ -193,6 +217,7 @@ class ParticleSystem extends THREE.Object3D {
   private _updateAsSubSystem(parentParticles: Particle[], options: SubSystemOptions): void {
     if (!this._playing || this._paused) return;
 
+    this.syncRendererParents();
     this._calculateDeltaTime();
 
     if (options.emitContinuous) {
@@ -447,6 +472,7 @@ class ParticleSystem extends THREE.Object3D {
   public addRenderer(renderer: Renderer): this {
     this.renderers.push(renderer);
     renderer.setup(this);
+    this.syncRendererParents();
 
     return this;
   }
@@ -460,6 +486,11 @@ class ParticleSystem extends THREE.Object3D {
     }
 
     return this;
+  }
+
+  public addRendererObject(object: THREE.Object3D): void {
+    this._rendererObjects.add(object);
+    this.getRendererParent().add(object);
   }
 
   public addSubSystem(subSystem: ParticleSystem, options: Partial<SubSystemOptions>): this {
@@ -492,6 +523,7 @@ class ParticleSystem extends THREE.Object3D {
     });
 
     subSystem._subSystemParent = this;
+    subSystem.simulationSpace = this.simulationSpace;
 
     // Identity local transform makes the subsystem share this system's space.
     subSystem.position.set(0, 0, 0);
@@ -579,6 +611,81 @@ class ParticleSystem extends THREE.Object3D {
     this.modules
       .flatMap((module) => module.withDependents())
       .forEach((module) => module.cleanup());
+
+    this._worldRendererRoot.removeFromParent();
+  }
+
+  private getEmitterContext(): { transform?: THREE.Matrix4 } | undefined {
+    if (this.simulationSpace !== 'world') return undefined;
+
+    this.updateWorldMatrix(true, false);
+
+    return {
+      transform: this.matrixWorld.clone(),
+    };
+  }
+
+  private getRendererParent(): THREE.Object3D {
+    if (this.simulationSpace !== 'world') return this;
+
+    return this._worldRendererRoot;
+  }
+
+  private syncRendererParents(): void {
+    const worldRendererParent = this.getWorldRendererParent();
+
+    if (this.simulationSpace === 'world') {
+      if (worldRendererParent && this._worldRendererRoot.parent !== worldRendererParent) {
+        worldRendererParent.add(this._worldRendererRoot);
+      }
+    } else if (this._worldRendererRoot.parent) {
+      this._worldRendererRoot.removeFromParent();
+    }
+
+    const parent = this.getRendererParent();
+    this._rendererObjects.forEach((object) => {
+      if (object.parent !== parent) parent.add(object);
+    });
+  }
+
+  private getWorldRendererParent(): THREE.Object3D | undefined {
+    let parent = this.parent;
+
+    while (parent instanceof ParticleSystem) {
+      parent = parent.parent;
+    }
+
+    return parent ?? undefined;
+  }
+
+  private convertParticlesToSimulationSpace(space: SimulationSpace): void {
+    this.updateWorldMatrix(true, false);
+
+    if (space === 'world') {
+      this.particles.forEach((particle) => {
+        this.localToWorld(particle.position);
+        this.localDirectionToWorld(particle.velocity);
+        this.localDirectionToWorld(particle.acceleration);
+        this.localDirectionToWorld(particle.scalarVelocity);
+        this.localDirectionToWorld(particle.scalarAcceleration);
+        particle.cacheStartValues();
+      });
+    } else {
+      const normalMatrix = new THREE.Matrix3().getNormalMatrix(this.matrixWorld).invert();
+
+      this.particles.forEach((particle) => {
+        this.worldToLocal(particle.position);
+        particle.velocity.applyMatrix3(normalMatrix);
+        particle.acceleration.applyMatrix3(normalMatrix);
+        particle.scalarVelocity.applyMatrix3(normalMatrix);
+        particle.scalarAcceleration.applyMatrix3(normalMatrix);
+        particle.cacheStartValues();
+      });
+    }
+  }
+
+  private localDirectionToWorld(vector: THREE.Vector3): void {
+    vector.applyMatrix3(new THREE.Matrix3().getNormalMatrix(this.matrixWorld));
   }
 }
 
