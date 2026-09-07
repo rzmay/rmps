@@ -45,6 +45,7 @@ class MeshRenderer extends Renderer {
 
       this.instances = new THREE.InstancedMesh(this.mesh.geometry, this.mesh.material, options.maxParticles ?? 10000);
       this.instances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      this.instances.frustumCulled = false;
 
       this.castShadow = options.castShadow ?? this.castShadow;
       this.receiveShadow = options.receiveShadow ?? this.receiveShadow;
