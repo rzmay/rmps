@@ -12,7 +12,8 @@
     "build:shaders": "node scripts/build-shaders.mjs",
     "copy:assets": "mkdir -p build && rm -rf build/assets && cp -r src/assets build/assets",
     "fix:shader-imports": "node scripts/fix-shader-imports.mjs",
-    "dev": "concurrently -k \"tsc --watch\" \"watch 'npm run build:shaders && npm run fix:shader-imports' src/shaders\" \"watch 'npm run copy:assets' src/assets\""
+    "dev": "concurrently -k \"tsc --watch\" \"watch 'npm run build:shaders && npm run fix:shader-imports' src/shaders\" \"watch 'npm run copy:assets' src/assets\"",
+    "prepack": "npm run build"
   },
   "author": "Robert May",
   "license": "MIT",
