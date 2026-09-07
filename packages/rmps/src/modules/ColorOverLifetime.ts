@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicColor from '../helpers/evaluateDynamicColor';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 
-export interface ColorOverLifetimeOptions {
+export interface ColorOverLifetimeOptions extends Partial<ModuleOptions> {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
 }
@@ -19,7 +19,7 @@ class ColorOverLifetime extends Module {
       if (this.options.alpha !== undefined) {
         particle.alpha = particle.start.alpha * evaluateDynamicNumber(this.options.alpha, particle.time, particle.id);
       }
-    });
+    }, options);
   }
 }
 

@@ -1,6 +1,6 @@
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
-export interface MassOverLifetimeOptions {
+export interface MassOverLifetimeOptions extends Partial<ModuleOptions> {
     mass: DynamicValue<number>;
     multiplyMassBySize: boolean;
 }

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicVector from '../helpers/evaluateDynamicVector3';
 import { SpeedRange } from './ColorBySpeed';
 
-export interface RotationBySpeedOptions {
+export interface RotationBySpeedOptions extends Partial<ModuleOptions> {
     angularVelocity: DynamicValue<THREE.Vector3>;
     speedRange?: SpeedRange;
 }
@@ -16,7 +16,7 @@ class RotationBySpeed extends Module {
       particle.angularVelocity = particle.start.angularVelocity.clone().add(
         evaluateDynamicVector(this.options.angularVelocity, this.getSpeedTime(particle.velocity.length()), particle.id),
       );
-    });
+    }, options);
   }
 
   private getSpeedTime(speed: number): number {

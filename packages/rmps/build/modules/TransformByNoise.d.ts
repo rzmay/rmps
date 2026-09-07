@@ -1,20 +1,17 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
-export interface NoiseOptions {
+import { NoiseOptions } from './NoiseModule';
+export interface TransformByNoiseOptions extends Partial<ModuleOptions>, NoiseOptions {
     strength: DynamicValue<THREE.Vector3>;
-    frequency: number;
-    scrollSpeed?: DynamicValue<number>;
-    octaves?: number;
-    octaveMultiplier?: number;
-    octaveScale?: number;
-    damping?: boolean;
+    scrollSpeed: DynamicValue<number>;
+    damping: boolean;
 }
 declare class TransformByNoise extends Module {
-    options: NoiseOptions;
+    options: Partial<TransformByNoiseOptions>;
     private noiseX;
     private noiseY;
     private noiseZ;
-    constructor(options: NoiseOptions);
+    constructor(options: Partial<TransformByNoiseOptions>);
 }
 export default TransformByNoise;

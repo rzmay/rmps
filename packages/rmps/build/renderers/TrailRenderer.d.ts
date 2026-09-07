@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import { DynamicValue } from '../types/DynamicValue';
@@ -13,7 +13,7 @@ export declare enum TrailTextureMode {
     RepeatPerSegment = 2,
     DistributePerSegment = 3
 }
-export interface TrailRendererOptions {
+export interface TrailRendererOptions extends RendererOptions {
     mode: TrailMode;
     textureMode: TrailTextureMode;
     ratio: number;
@@ -55,10 +55,9 @@ declare class TrailRenderer extends Renderer {
     receiveShadow: boolean;
     private particles;
     private trails;
-    private camera?;
     constructor(options?: Partial<TrailRendererOptions>);
     setup(system: ParticleSystem): void;
-    update(particles: Particle[]): void;
+    _update(particles: Particle[], system: ParticleSystem): void;
     destroy(): void;
     private updateParticleTrails;
     private addTrailPoint;

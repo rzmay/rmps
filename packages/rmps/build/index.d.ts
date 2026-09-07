@@ -29,4 +29,4 @@ export { default as ParticleForceField } from './ParticleForceField';
 export { default as ParticleForceFieldHelper } from './ParticleForceFieldHelper';
 export { ICollisionBackend, CollisionHit, CollisionQuery } from './interfaces/ICollisionBackend';
 export { default as ThreeCollisionBackend } from './collision/ThreeCollisionBackend';
-export { DynamicValue, dynamicValue } from './types/DynamicValue';
+export { DynamicValue } from './types/DynamicValue';

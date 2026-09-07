@@ -9,7 +9,7 @@ class NoiseModule extends Module {
                 noise: this.generateNoise(particle),
                 noise4d: this.generateNoise(particle, true),
             };
-        });
+        }, options);
         this.octaves = 1;
         this.frequency = 1;
         this.lacunarity = 2.0;

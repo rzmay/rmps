@@ -4,7 +4,7 @@ class ScaleBySpeed extends Module {
     constructor(options) {
         super((particle) => {
             particle.scale = particle.start.scale.clone().multiply(evaluateDynamicVector(this.options.scale, this.getSpeedTime(particle.velocity.length()), particle.id));
-        });
+        }, options);
         this.options = options;
     }
     getSpeedTime(speed) {

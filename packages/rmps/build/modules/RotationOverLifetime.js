@@ -5,7 +5,7 @@ class RotationOverLifetime extends Module {
         super((particle) => {
             particle.angularVelocity = particle.start.angularVelocity.clone()
                 .add(evaluateDynamicVector(this.options.angularVelocity, particle.time, particle.id));
-        });
+        }, options);
         this.options = options;
     }
 }

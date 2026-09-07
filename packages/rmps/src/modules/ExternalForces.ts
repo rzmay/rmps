@@ -1,4 +1,4 @@
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
@@ -6,7 +6,7 @@ import { IParticleForceField } from '../interfaces/IParticleForceField';
 import ParticleForceField from '../ParticleForceField';
 import ParticleSystem from '../ParticleSystem';
 
-export interface ExternalForcesOptions {
+export interface ExternalForcesOptions extends Partial<ModuleOptions> {
     multiplier?: DynamicValue<number>;
     forceFieldFilter?: (forceField: ParticleForceField) => boolean;
     forceFields?: IParticleForceField[];
@@ -28,7 +28,7 @@ class ExternalForces extends Module {
       this.forceFields.forEach((forceField) => {
         particle.acceleration.addScaledVector(forceField.getForce(particle, deltaTime), multiplier);
       });
-    });
+    }, options);
 
     this.explicitForceFields = options.forceFields;
     this.forceFieldFilter = options.forceFieldFilter ?? (() => true );

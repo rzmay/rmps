@@ -20,7 +20,7 @@ class LimitVelocityOverLifetime extends Module {
                 }
                 particle.velocity.multiplyScalar(Math.max(0, 1 - drag * deltaTime));
             }
-        });
+        }, options);
         this.options = options;
     }
     // eslint-disable-next-line class-methods-use-this

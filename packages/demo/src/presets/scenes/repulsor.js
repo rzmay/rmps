@@ -6,50 +6,9 @@ import {
   ParticleSystem,
 } from 'rmps';
 
-export default function createForceFields(scene) {
+export default function createRepulsorAttractor(scene) {
   const root = new THREE.Group();
-  root.name = 'Force Fields Scene';
-
-  /*
-   * VORTEX
-   *
-   * Pulls particles toward its center while accelerating them
-   * tangentially around the Y axis.
-   */
-  const vortex = ParticleForceField.Sphere({
-    rotationSpeed: 9,
-    rotationAttraction: 5,
-    drag: 0.3,
-  }, 2);
-
-  vortex.name = 'Vortex';
-  vortex.position.set(-4, 3, 0);
-
-  const vortexHelper = new ParticleForceFieldHelper(
-    vortex,
-    0xa66cff,
-  );
-
-  /*
-   * WIND TUNNEL
-   *
-   * A rectangular region applying a directional force.
-   */
-  const wind = ParticleForceField.Box(
-    {
-      direction: new THREE.Vector3(6, 2, 0),
-      drag: 0.1,
-    },
-    2, 2, 3,
-  );
-
-  wind.name = 'Wind';
-  wind.position.set(4, 3, 0);
-
-  const windHelper = new ParticleForceFieldHelper(
-    wind,
-    0x5edcff,
-  );
+  root.name = 'Repulsor and Attractor Scene';
 
   /*
    * REPULSOR
@@ -57,8 +16,8 @@ export default function createForceFields(scene) {
    * Negative gravity pushes particles away from the field center.
    */
   const repulsor = ParticleForceField.Sphere({
-    gravity: -12,
-  }, 2);
+    gravity: -0.1,
+  }, 4);
 
   repulsor.name = 'Repulsor';
   repulsor.position.set(0, 3, -4);
@@ -68,40 +27,31 @@ export default function createForceFields(scene) {
     0xff655e,
   );
 
-  /*
-   * FUNNEL
-   *
-   * Shows that force-field volumes can use geometry other than a
-   * sphere or box.
-   */
-  const funnel = ParticleForceField.Cone(
-    {
-      rotationSpeed: 7,
-      rotationAttraction: 4,
-      direction: new THREE.Vector3(0, 3, 0),
-      drag: 0.25,
-    },
-    2,
-    4,
+  root.add(
+    repulsor,
+    repulsorHelper,
   );
 
-  funnel.name = 'Funnel';
-  funnel.position.set(0, 3, 4);
+  /*
+   * ATTRACTOR
+   *
+   * Positive gravity pulls particles into the field center.
+   */
+  const attractor = ParticleForceField.Sphere({
+    gravity: 0.1,
+  }, 4);
 
-  const funnelHelper = new ParticleForceFieldHelper(
-    funnel,
-    0x63ff9d,
+  attractor.name = 'Attractor';
+  attractor.position.set(0, 3, 4);
+
+  const attractorHelper = new ParticleForceFieldHelper(
+    attractor,
+    0x65ff5e,
   );
 
   root.add(
-    vortex,
-    vortexHelper,
-    wind,
-    windHelper,
-    repulsor,
-    repulsorHelper,
-    funnel,
-    funnelHelper,
+    attractor,
+    attractorHelper,
   );
 
   /*
@@ -172,10 +122,8 @@ export default function createForceFields(scene) {
 
     scene.remove(root);
 
-    vortexHelper.dispose();
-    windHelper.dispose();
     repulsorHelper.dispose();
-    funnelHelper.dispose();
+    attractorHelper.dispose();
 
     ground.geometry.dispose();
     ground.material.dispose();

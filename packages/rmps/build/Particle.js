@@ -22,6 +22,7 @@ class Particle {
         this.time = 0;
         this.realtime = 0;
         this.id = nanoid();
+        this.tags = options.tags;
         this.start = this.createStartValues();
         this.noise = {};
         this.data = {};

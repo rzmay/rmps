@@ -1,7 +1,6 @@
 import GUI from 'lil-gui';
 import * as THREE from 'three';
 
-// TODO: this should support the cast/receive shadow options in the mesh and trail renderers
 import {
     Emitter,
     EmissionShape,
@@ -74,6 +73,7 @@ export class ParticleSystemGUI {
         this.scenes = options.scenes ?? {};
         this.moduleFactories = { ...DEFAULT_MODULE_FACTORIES, ...options.moduleFactories };
         this.rendererFactories = { ...DEFAULT_RENDERER_FACTORIES, ...options.rendererFactories };
+        this.subSystemFactories = options.subSystemFactories ?? {};
         this.onSystemChange = options.onSystemChange;
         this.onCodeChange = options.onCodeChange;
         this.currentPresetName = options.initialPreset;
@@ -125,6 +125,7 @@ export class ParticleSystemGUI {
         this.buildDemoSelectors(this.contentFolder);
         this.buildSystemFolder(this.contentFolder);
         this.buildEmittersFolder(this.contentFolder);
+        this.buildSubSystemsFolder(this.contentFolder);
         this.buildModulesFolder(this.contentFolder);
         this.buildRenderersFolder(this.contentFolder);
     }
@@ -177,10 +178,21 @@ export class ParticleSystemGUI {
         this.addVector3(folder, this.system.gravity, 'Gravity');
         this.addDynamicValue(folder, this.system, 'gravityModifier', 'Gravity Modifier');
         const actions = {
-            clearParticles: () => {
-                this.system.particles.length = 0;
+            start: () => this.system.start(),
+            pause: () => this.system.pause(),
+            resume: () => {
+                if (this.system.resume) this.system.resume();
+                else this.system.start();
             },
+            stop: () => this.system.stop(false),
+            stopAndClear: () => this.system.stop(true),
+            clearParticles: () => this.system.clearParticles(),
         };
+        folder.add(actions, 'start').name('Start / Restart');
+        folder.add(actions, 'pause').name('Pause');
+        folder.add(actions, 'resume').name('Resume');
+        folder.add(actions, 'stop').name('Stop');
+        folder.add(actions, 'stopAndClear').name('Stop + Clear');
         folder.add(actions, 'clearParticles').name('Clear Particles');
     }
     buildEmittersFolder(root) {
@@ -193,7 +205,7 @@ export class ParticleSystemGUI {
         });
         const actions = {
             addEmitter: () => {
-                this.system.emitters.push(new Emitter());
+                this.system.addEmitter(new Emitter());
                 this.rebuild();
                 this.emitCode();
             },
@@ -202,6 +214,8 @@ export class ParticleSystemGUI {
     }
     buildEmitter(folder, emitter, index) {
         this.addDynamicValue(folder, emitter, 'rate', 'Rate');
+        this.addDynamicValue(folder, emitter, 'radialSpeed', 'Radial Speed');
+        this.addDynamicValue(folder, emitter, 'alignment', 'Alignment');
         folder.add(emitter, 'duration', 0.01).name('Duration');
         folder.add(emitter, 'looping').name('Looping');
         this.buildEmissionShape(folder.addFolder('Emission Shape'), emitter);
@@ -209,7 +223,7 @@ export class ParticleSystemGUI {
         this.buildBursts(folder.addFolder(`Bursts (${emitter.bursts.length})`), emitter);
         const actions = {
             remove: () => {
-                this.system.emitters.splice(index, 1);
+                this.system.removeEmitter(emitter);
                 this.rebuild();
                 this.emitCode();
             },
@@ -330,6 +344,81 @@ export class ParticleSystemGUI {
         };
         folder.add(actions, 'add').name('+ Add Burst');
     }
+    buildSubSystemsFolder(root) {
+        const entries = Array.from(this.system.subSystems?.entries?.() ?? []);
+        const section = root.addFolder(`Sub Systems (${entries.length})`);
+        section.domElement.classList.add('psgui-section', 'psgui-subsystems');
+        section.open();
+
+        entries.forEach(([subSystem, options], index) => {
+            const label = subSystem.name || subSystem.constructor.name || `Sub System ${index + 1}`;
+            const folder = section.addFolder(`${index + 1}. ${label}`);
+            this.buildSubSystem(folder, subSystem, options);
+        });
+
+        const names = Object.keys(this.subSystemFactories);
+        if (names.length > 0) {
+            const state = { type: names[0] };
+            section.add(state, 'type', names).name('Sub System Type');
+            const actions = {
+                add: async () => {
+                    const subSystem = await this.subSystemFactories[state.type]();
+                    this.system.addSubSystem(subSystem);
+                    this.rebuild();
+                    this.emitCode();
+                },
+            };
+            section.add(actions, 'add').name('+ Add Sub System');
+        }
+    }
+
+    buildSubSystem(folder, subSystem, options) {
+        const shouldEmitIsFunction = typeof options.shouldEmit === 'function';
+        if (shouldEmitIsFunction) {
+            const state = { shouldEmit: 'ƒ(particle) — function driven' };
+            folder.add(state, 'shouldEmit').name('Should Emit').disable();
+        } else {
+            folder.add(options, 'shouldEmit').name('Should Emit');
+        }
+
+        folder.add(options, 'ratio', 0, 1).name('Ratio');
+        folder.add(options, 'emitContinuous').name('Emit Continuous');
+        folder.add(options, 'emitOnCollision').name('Emit On Collision');
+        folder.add(options, 'emitOnDeath').name('Emit On Death');
+        folder.add(options, 'inheritLifetime').name('Inherit Lifetime');
+
+        const info = {
+            particles: subSystem.particles.length,
+            emitters: subSystem.emitters.length,
+            modules: subSystem.modules.length,
+            renderers: subSystem.renderers.length,
+        };
+        const infoFolder = folder.addFolder('Contents');
+        infoFolder.add(info, 'emitters').name('Emitters').disable();
+        infoFolder.add(info, 'modules').name('Modules').disable();
+        infoFolder.add(info, 'renderers').name('Renderers').disable();
+        infoFolder.add(info, 'particles').name('Current Particles').disable().listen();
+
+        const actions = {
+            edit: () => {
+                const previous = this.system;
+                this.system = subSystem;
+                this.rebuild();
+                this.system = previous;
+            },
+            remove: () => {
+                this.system.removeSubSystem(subSystem);
+                this.rebuild();
+                this.emitCode();
+            },
+        };
+
+        // Nested editing is intentionally handled by selecting the subsystem as
+        // the current system externally; this button is omitted for now because
+        // rebuild() is rooted around this.system.
+        folder.add(actions, 'remove').name('Remove Sub System');
+    }
+
     buildModulesFolder(root) {
         const section = root.addFolder(`Modules (${this.system.modules.length})`);
         section.domElement.classList.add('psgui-section', 'psgui-modules');
@@ -343,7 +432,7 @@ export class ParticleSystemGUI {
         section.add(state, 'type', names).name('Module Type');
         const actions = {
             add: () => {
-                this.system.modules.push(this.moduleFactories[state.type]());
+                this.system.addModule(this.moduleFactories[state.type]());
                 this.rebuild();
                 this.emitCode();
             },
@@ -370,7 +459,7 @@ export class ParticleSystemGUI {
         }
         const actions = {
             remove: () => {
-                this.system.modules.splice(index, 1);
+                this.system.removeModule(module);
                 this.rebuild();
                 this.emitCode();
             },
@@ -391,8 +480,7 @@ export class ParticleSystemGUI {
         const actions = {
             add: () => {
                 const renderer = this.rendererFactories[state.type]();
-                renderer.setup(this.system);
-                this.system.renderers.push(renderer);
+                this.system.addRenderer(renderer);
                 this.rebuild();
                 this.emitCode();
             },
@@ -421,8 +509,7 @@ export class ParticleSystemGUI {
 
         const actions = {
             remove: () => {
-                renderer.destroy();
-                this.system.renderers.splice(index, 1);
+                this.system.removeRenderer(renderer);
                 this.rebuild();
                 this.emitCode();
             },
@@ -431,6 +518,8 @@ export class ParticleSystemGUI {
     }
     buildSpriteRenderer(folder, renderer) {
         this.addDynamicValue(folder, renderer, 'fps', 'FPS');
+        folder.add(renderer, 'castShadow').name('Cast Shadow');
+        folder.add(renderer, 'softParticleDistance', 0).name('Soft Particle Distance');
         folder.add(renderer, 'frames').min(1).step(1).name('Frames').onFinishChange(() => this.reloadSpriteMaterial(renderer));
         const materialState = { material: renderer.materialType };
         folder.add(materialState, 'material', ['unlit', 'basic']).name('Material').onChange((value) => {
@@ -455,7 +544,7 @@ export class ParticleSystemGUI {
         folder.add(renderer, 'count').min(0).step(1).name('Max Lights');
         folder.add(renderer, 'ratio', 0, 1).name('Particle Ratio');
         folder.add(renderer, 'randomDistribution').name('Random Distribution');
-        folder.add(renderer, 'useParticleColor').name('Use Particle Color');
+        folder.add(renderer, 'inheritParticleColor').name('Inherit Particle Color');
         folder.add(renderer, 'sizeAffectsRange').name('Size Affects Range');
         folder.add(renderer, 'alphaAffectsIntensity').name('Alpha Affects Intensity');
         const lightOptions = folder.addFolder('Point Light');
@@ -464,6 +553,7 @@ export class ParticleSystemGUI {
             intensity: renderer.lightOptions.intensity ?? 1,
             distance: renderer.lightOptions.distance ?? 0,
             decay: renderer.lightOptions.decay ?? renderer.decay,
+            power: renderer.lightOptions.power ?? 0,
         };
         lightOptions.addColor(lightState, 'color').name('Color').onChange((value) => {
             renderer.lightOptions.color = value;
@@ -476,6 +566,9 @@ export class ParticleSystemGUI {
         });
         lightOptions.add(lightState, 'decay', 0).name('Decay').onChange((value) => {
             renderer.lightOptions.decay = value;
+        });
+        lightOptions.add(lightState, 'power', 0).name('Power').onChange((value) => {
+            renderer.lightOptions.power = value;
         });
     }
     buildMeshRenderer(folder, renderer) {
@@ -491,6 +584,8 @@ export class ParticleSystemGUI {
         folder.add(info, 'geometry').name('Geometry').disable();
         folder.add(info, 'material').name('Material').disable();
         folder.add(info, 'capacity').name('Capacity').disable();
+        folder.add(renderer, 'castShadow').name('Cast Shadow');
+        folder.add(renderer, 'receiveShadow').name('Receive Shadow');
     }
     buildTrailRenderer(folder, renderer) {
         const modeState = {
@@ -563,6 +658,9 @@ export class ParticleSystemGUI {
         folder
             .add(renderer, 'sizeAffectsLifetime')
             .name('Size Affects Lifetime');
+
+        folder.add(renderer, 'castShadow').name('Cast Shadow');
+        folder.add(renderer, 'receiveShadow').name('Receive Shadow');
 
         folder
             .add(renderer, 'inheritParticleColor')
@@ -817,18 +915,49 @@ export class ParticleSystemGUI {
     }
     serializeParticleSystem() {
         const imports = new Set(['ParticleSystem', 'Emitter', 'EmissionShape', 'EmissionSource']);
-        this.system.modules.forEach((module) => imports.add(module.constructor.name));
-        this.system.renderers.forEach((renderer) => imports.add(renderer.constructor.name));
-        const emitters = this.system.emitters.map((emitter) => this.serializeEmitter(emitter)).join(',\n');
-        const modules = this.system.modules.map((module) => this.serializeModule(module)).join(',\n');
-        const renderers = this.system.renderers.map((renderer) => this.serializeRenderer(renderer)).join(',\n');
-        return [
+        this.collectImports(this.system, imports);
+
+        const lines = [
             `import * as THREE from 'three';`,
             `import { ${Array.from(imports).sort().join(', ')} } from 'rmps';`,
             '',
-            'const particleSystem = new ParticleSystem({',
-            `  gravity: ${this.serializeValue(this.system.gravity)},`,
-            `  gravityModifier: ${this.serializeValue(this.system.gravityModifier)},`,
+        ];
+
+        const counter = { value: 0 };
+        const rootName = 'particleSystem';
+        lines.push(...this.serializeParticleSystemTree(this.system, rootName, counter));
+        lines.push('', `export default ${rootName};`, '');
+        return lines.join('\n');
+    }
+
+    collectImports(system, imports) {
+        system.modules.forEach((module) => imports.add(module.constructor.name));
+        system.renderers.forEach((renderer) => imports.add(renderer.constructor.name));
+        system.subSystems?.forEach((_options, subSystem) => this.collectImports(subSystem, imports));
+    }
+
+    serializeParticleSystemTree(system, variableName, counter) {
+        const lines = this.serializeParticleSystemDeclaration(system, variableName);
+
+        system.subSystems?.forEach((options, subSystem) => {
+            counter.value += 1;
+            const subName = `${variableName}SubSystem${counter.value}`;
+            lines.push('');
+            lines.push(...this.serializeParticleSystemTree(subSystem, subName, counter));
+            lines.push(`${variableName}.addSubSystem(${subName}, ${this.serializeSubSystemOptions(options)});`);
+        });
+
+        return lines;
+    }
+
+    serializeParticleSystemDeclaration(system, variableName) {
+        const emitters = system.emitters.map((emitter) => this.serializeEmitter(emitter)).join(',\n');
+        const modules = system.modules.map((module) => this.serializeModule(module)).join(',\n');
+        const renderers = system.renderers.map((renderer) => this.serializeRenderer(renderer)).join(',\n');
+        const lines = [
+            `const ${variableName} = new ParticleSystem({`,
+            `  gravity: ${this.serializeValue(system.gravity)},`,
+            `  gravityModifier: ${this.serializeValue(system.gravityModifier)},`,
             '  emitters: [',
             this.indent(emitters, 4),
             '  ],',
@@ -839,11 +968,27 @@ export class ParticleSystemGUI {
             this.indent(renderers, 4),
             '  ],',
             '});',
-            '',
-            'export default particleSystem;',
-            '',
-        ].join('\n');
+        ];
+
+        if (system.name) lines.push(`${variableName}.name = ${JSON.stringify(system.name)};`);
+        if (!system.position.equals(new THREE.Vector3())) {
+            lines.push(`${variableName}.position.set(${system.position.x}, ${system.position.y}, ${system.position.z});`);
+        }
+
+        return lines;
     }
+
+    serializeSubSystemOptions(options) {
+        return this.serializeValue({
+            shouldEmit: options.shouldEmit,
+            ratio: options.ratio,
+            emitContinuous: options.emitContinuous,
+            emitOnCollision: options.emitOnCollision,
+            emitOnDeath: options.emitOnDeath,
+            inheritLifetime: options.inheritLifetime,
+        });
+    }
+
     serializeEmitter(emitter) {
         const initialValues = this.serializeValue(emitter.initialValues);
         const bursts = this.serializeValue(emitter.bursts.map(({ time, count }) => ({ time, count })));
@@ -851,6 +996,8 @@ export class ParticleSystemGUI {
             'new Emitter({',
             `  source: ${this.serializeEmissionShape(emitter.source)},`,
             `  rate: ${this.serializeValue(emitter.rate)},`,
+            `  radialSpeed: ${this.serializeValue(emitter.radialSpeed)},`,
+            `  alignment: ${this.serializeValue(emitter.alignment)},`,
             `  duration: ${this.serializeValue(emitter.duration)},`,
             `  looping: ${this.serializeValue(emitter.looping)},`,
             `  bursts: ${bursts},`,
@@ -915,6 +1062,8 @@ export class ParticleSystemGUI {
                 tileMargin: renderer.tileMargin,
                 gridSize: renderer.gridSize,
                 frames: renderer.frames,
+                castShadow: renderer.castShadow,
+                softParticleDistance: renderer.softParticleDistance,
                 alphaMap: renderer.alphaMap ? this.textureSource(renderer.alphaMap) : undefined,
                 material: renderer.materialType,
                 materialOptions: renderer.materialOptions,
@@ -930,14 +1079,14 @@ export class ParticleSystemGUI {
                 count: renderer.count,
                 ratio: renderer.ratio,
                 randomDistribution: renderer.randomDistribution,
-                useParticleColor: renderer.useParticleColor,
+                inheritParticleColor: renderer.inheritParticleColor,
                 sizeAffectsRange: renderer.sizeAffectsRange,
                 alphaAffectsIntensity: renderer.alphaAffectsIntensity,
                 lightOptions: renderer.lightOptions,
             })})`;
         }
         if (renderer instanceof MeshRenderer) {
-            return `new MeshRenderer({\n  mesh: ${this.serializeMesh(renderer.mesh)},\n  maxParticles: ${renderer.instances.instanceMatrix.count},\n})`;
+            return `new MeshRenderer({\n  mesh: ${this.serializeMesh(renderer.mesh)},\n  maxParticles: ${renderer.instances.instanceMatrix.count},\n  castShadow: ${this.serializeValue(renderer.castShadow)},\n  receiveShadow: ${this.serializeValue(renderer.receiveShadow)},\n})`;
         }
         if (renderer instanceof TrailRenderer) {
             return [
@@ -954,6 +1103,8 @@ export class ParticleSystemGUI {
                 `  sizeAffectsWidth: ${this.serializeValue(renderer.sizeAffectsWidth)},`,
                 `  sizeAffectsLifetime: ${this.serializeValue(renderer.sizeAffectsLifetime)},`,
                 `  inheritParticleColor: ${this.serializeValue(renderer.inheritParticleColor)},`,
+                `  castShadow: ${this.serializeValue(renderer.castShadow)},`,
+                `  receiveShadow: ${this.serializeValue(renderer.receiveShadow)},`,
                 `  colorOverLifetime: ${this.serializeValue(renderer.colorOverLifetime)},`,
                 `  colorOverTrail: ${this.serializeValue(renderer.colorOverTrail)},`,
                 `  materialOptions: ${this.serializeMaterialOptions(renderer.material)},`,
@@ -1112,6 +1263,7 @@ export class ParticleSystemGUI {
         padding-top: 4px;
       }
       .lil-gui .psgui-emitters { border-top-color: #55aaff; }
+      .lil-gui .psgui-subsystems { border-top-color: #4dd9c0; }
       .lil-gui .psgui-modules { border-top-color: #b980ff; }
       .lil-gui .psgui-renderers { border-top-color: #ff9d57; }
       .lil-gui .psgui-demo { border-top-color: #66d19e; }

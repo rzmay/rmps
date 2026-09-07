@@ -1,9 +1,11 @@
 import * as THREE from 'three';
-interface ParticleOptions {
+import { Tag } from './types/Tag';
+export interface ParticleOptions {
     position: THREE.Vector3;
     rotation: THREE.Vector3;
     scale: THREE.Vector3;
     color: THREE.Color;
+    tags: Tag[];
     alpha: number;
     lifetime: number;
     mass: number;
@@ -49,6 +51,7 @@ declare class Particle {
     id: string;
     start: ParticleStartValues;
     noise: Record<string, ParticleNoiseValues>;
+    tags?: Tag[];
     data: any;
     constructor(options?: Partial<ParticleOptions>);
     cacheStartValues(): void;

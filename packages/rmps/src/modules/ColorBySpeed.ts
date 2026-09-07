@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicColor from '../helpers/evaluateDynamicColor';
@@ -7,7 +7,7 @@ import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 
 export type SpeedRange = [number, number] | { min: number; max: number };
 
-export interface ColorBySpeedOptions {
+export interface ColorBySpeedOptions extends Partial<ModuleOptions> {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
     speedRange?: SpeedRange;
@@ -24,7 +24,7 @@ class ColorBySpeed extends Module {
       if (this.options.alpha !== undefined) {
         particle.alpha = particle.start.alpha * evaluateDynamicNumber(this.options.alpha, t, particle.id);
       }
-    });
+    }, options);
   }
 
   private getSpeedTime(speed: number): number {

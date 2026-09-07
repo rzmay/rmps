@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
-export interface ScaleOverLifetimeOptions {
+export interface ScaleOverLifetimeOptions extends Partial<ModuleOptions> {
     scale: DynamicValue<THREE.Vector3>;
 }
 declare class ScaleOverLifetime extends Module {

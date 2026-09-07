@@ -87,9 +87,6 @@ export default async function createRapierCollisionTest(scene) {
       world,
     });
 
-  const clock = new THREE.Clock();
-  let frameId;
-
   const syncBody = (mesh, body) => {
     const position = body.translation();
     const rotation = body.rotation();
@@ -108,52 +105,42 @@ export default async function createRapierCollisionTest(scene) {
     );
   };
 
+  const clock = new THREE.Clock();
+  const fixedDelta = 1 / 60;
+  let accumulator = 0;
+  let elapsed = 0;
+  let frameId;
+
+  world.timestep = fixedDelta;
+
   const animate = () => {
-    const time = clock.getElapsedTime();
+    const frameDelta = Math.min(clock.getDelta(), 0.1);
+    accumulator += frameDelta;
+    elapsed += frameDelta;
 
-    const x = Math.sin(time) * 2;
-
-    movingBody.setNextKinematicTranslation({
-      x,
-      y: 1,
-      z: 2,
-    });
-
-    const rotation =
-      new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(
-          0,
-          time * 0.75,
-          0,
-        ),
-      );
-
-    movingBody.setNextKinematicRotation({
-      x: rotation.x,
-      y: rotation.y,
-      z: rotation.z,
-      w: rotation.w,
-    });
-
-    world.step();
-
-    syncBody(
-      objects.movingBox,
-      movingBody,
+    const x = Math.sin(elapsed) * 2;
+    const rotation = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(0, elapsed * 0.75, 0),
     );
 
-    syncBody(
-      objects.dynamicA,
-      dynamicBodyA,
-    );
+    while (accumulator >= fixedDelta) {
+      movingBody.setNextKinematicTranslation({ x, y: 1, z: 2 });
+      movingBody.setNextKinematicRotation({
+        x: rotation.x,
+        y: rotation.y,
+        z: rotation.z,
+        w: rotation.w,
+      });
 
-    syncBody(
-      objects.dynamicB,
-      dynamicBodyB,
-    );
+      world.step();
+      accumulator -= fixedDelta;
+    }
 
-    frameId =
-      requestAnimationFrame(animate);
+    syncBody(objects.movingBox, movingBody);
+    syncBody(objects.dynamicA, dynamicBodyA);
+    syncBody(objects.dynamicB, dynamicBodyB);
+
+    frameId = requestAnimationFrame(animate);
   };
 
   animate();

@@ -1,20 +1,24 @@
 import * as THREE from 'three';
-
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
-import Collision from './Collision';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
-import { CollisionHit } from '../interfaces/ICollisionBackend';
 import particleRatio from '../helpers/particleRatio';
+import { StrictMultiple } from '../types/Multiple';
+import acceptMultiple from '../helpers/acceptMultiple';
 
-export interface AudioOptions {
-  listener?: THREE.AudioListener;
+export interface AudioOptions extends Partial<ModuleOptions> {
+  listener: THREE.AudioListener;
 
-  sound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
-  onCollisionSound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
+  sound: StrictMultiple<AudioBuffer>;
+  onCollisionSound: StrictMultiple<AudioBuffer>;
+  onSpawnSound: StrictMultiple<AudioBuffer>;
+  onDeathSound: StrictMultiple<AudioBuffer>;
 
+  shouldPlay: (particle: Particle) => boolean;
+
+  loop: boolean;
   ratio: number;
   collisionRatio: number;
 
@@ -36,56 +40,60 @@ interface ParticleAudio {
   buffer: AudioBuffer;
 }
 
+// TODO: onSpawn sound, onDeath sound
 class Audio extends Module {
   listener?: THREE.AudioListener;
 
-  sound?: [AudioBuffer, ...AudioBuffer[]];
+  sound?: AudioBuffer[];
+  onCollisionSound?: AudioBuffer[];
+  onSpawnSound?: AudioBuffer[];
+  onDeathSound?: AudioBuffer[];
 
-  onCollisionSound?: [AudioBuffer, ...AudioBuffer[]];
+  shouldPlay: (particle: Particle) => boolean = () => true;
 
+  loop: boolean = true;
   ratio: number;
-
   collisionRatio: number;
 
   pitch: DynamicValue<number>;
-
   volume: DynamicValue<number>;
 
   sizeAffectsPitch: number;
-
   sizeAffectsVolume: number;
-
   alphaAffectsPitch: number;
-
   alphaAffectsVolume: number;
-
   speedAffectsPitch: number;
-
   speedAffectsVolume: number;
 
   private _system?: ParticleSystem;
-
   private _particleAudio = new Map<string, ParticleAudio>();
-
-  private _collisionAudio = new Set<THREE.PositionalAudio>();
-
-  private _collision?: Collision;
-
-  private _setUpCollision: boolean = false;
+  private _eventAudio = new Set<THREE.PositionalAudio>();
+  private _setupCallbacks: boolean = false;
 
   constructor(options: Partial<AudioOptions> = {}) {
-    super((particle) => this._updateParticle(particle));
+    super((particle) => this._updateParticle(particle), options);
 
     this.listener = options.listener;
 
     this.sound = options.sound
-      ? (Array.isArray(options.sound) ? options.sound : [options.sound])
+      ? acceptMultiple(options.sound)
       : undefined;
 
     this.onCollisionSound = options.onCollisionSound
-      ? (Array.isArray(options.onCollisionSound) ? options.onCollisionSound : [options.onCollisionSound])
+      ? acceptMultiple(options.onCollisionSound)
       : undefined;
 
+    this.onSpawnSound = options.onSpawnSound
+      ? acceptMultiple(options.onSpawnSound)
+      : undefined;
+
+    this.onDeathSound = options.onDeathSound
+      ? acceptMultiple(options.onDeathSound)
+      : undefined;
+
+    this.shouldPlay = options.shouldPlay ?? this.shouldPlay;
+
+    this.loop = options.loop ?? this.loop;
     this.ratio = THREE.MathUtils.clamp(options.ratio ?? 1, 0, 1);
     this.collisionRatio = THREE.MathUtils.clamp(options.collisionRatio ?? this.ratio, 0, 1);
 
@@ -104,6 +112,22 @@ class Audio extends Module {
 
   public prepare(system: ParticleSystem): void {
     this._system = system;
+
+    if (!this._setupCallbacks) {
+      system.onCollision(
+        (particle, _) => this._handleEvent(particle, this.onCollisionSound),
+      );
+
+      system.onDeath(
+        (particle) => this._handleEvent(particle, this.onDeathSound),
+      );
+
+      system.onSpawn(
+        (particle) => this._handleEvent(particle, this.onSpawnSound),
+      )
+
+      this._setupCallbacks = true;
+    }
 
     if (!this.listener) {
       // Try to get listener from cache
@@ -128,27 +152,13 @@ class Audio extends Module {
       if (this.listener && system.scene) system.scene.userData["__rmps_audioListener"] = this.listener;
     }
 
-    if (this.onCollisionSound && !this._setUpCollision) {
-      this._collision = system.modules
-        .flatMap((module) => module.withDependents())
-        .find((module) => module instanceof Collision);
-
-      if (this._collision) {
-        this._collision.onCollision(
-          (particle, hit) => this._handleCollision(particle, hit),
-        );
-
-        this._setUpCollision = true;
-      }
-    }
-
     this._cleanParticleAudio(system.particles);
   }
 
   private _updateParticle(particle: Particle): void {
     if (!this.listener || !this.sound || !this._system) return;
 
-    if (!particleRatio(particle, this.ratio)) {
+    if (!particleRatio(particle, this.ratio) || !this.shouldPlay(particle)) {
       this._removeParticleAudio(particle.id);
       return;
     }
@@ -160,7 +170,7 @@ class Audio extends Module {
       const sound = this.sound[Math.floor(Math.random() * this.sound.length)];
 
       audio.setBuffer(sound);
-      audio.setLoop(true);
+      audio.setLoop(this.loop);
 
       this._system.add(audio);
 
@@ -179,22 +189,28 @@ class Audio extends Module {
     state.audio.setVolume(this._getVolume(particle));
   }
 
-  private _handleCollision(
-    particle: Particle,
-    _hit: CollisionHit,
-  ): void {
+  private _handleEvent(particle: Particle, audio?: AudioBuffer[]): void {
     if (
-      !this.listener
-      || !this.onCollisionSound
-      || !this._system
+      !audio
+      || audio?.length === 0
       || !particleRatio(particle, this.collisionRatio)
+      || !this.shouldPlay(particle)
     ) {
       return;
     }
 
+    this._playOneShot(
+      audio[Math.floor(Math.random() * audio.length)],
+      particle,
+    );
+  }
+
+  private _playOneShot(clip: AudioBuffer, particle: Particle) {
+    if (!this.listener || !this._system) return;
+
     const audio = new THREE.PositionalAudio(this.listener);
 
-    audio.setBuffer(this.onCollisionSound[Math.floor(Math.random() * this.onCollisionSound.length)]);
+    audio.setBuffer(clip);
     audio.setLoop(false);
 
     audio.position.copy(particle.position);
@@ -202,7 +218,7 @@ class Audio extends Module {
     audio.setVolume(this._getVolume(particle));
 
     this._system.add(audio);
-    this._collisionAudio.add(audio);
+    this._eventAudio.add(audio);
 
     audio.play();
 
@@ -212,7 +228,7 @@ class Audio extends Module {
      */
     if (audio.source) {
       audio.source.addEventListener('ended', () => {
-        this._collisionAudio.delete(audio);
+        this._eventAudio.delete(audio);
         audio.removeFromParent();
       });
     }
@@ -286,7 +302,7 @@ class Audio extends Module {
       this._removeParticleAudio(id);
     });
 
-    this._collisionAudio.forEach((audio) => {
+    this._eventAudio.forEach((audio) => {
       if (audio.isPlaying) {
         audio.stop();
       }
@@ -294,7 +310,7 @@ class Audio extends Module {
       audio.removeFromParent();
     });
 
-    this._collisionAudio.clear();
+    this._eventAudio.clear();
   }
 }
 

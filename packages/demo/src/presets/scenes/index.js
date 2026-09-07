@@ -6,7 +6,9 @@ import ferndaleStudio from 'url:../../assets/images/ferndale_studio_11_1k.hdr';
 import createCollisionTest from './collisionTest';
 import createRapierCollisionTest from './collisionRapier';
 import createJoltCollisionTest from './collisionJolt';
-import createForceFields from './forceFields';
+import createWind from './wind';
+import createVortex from './vortex';
+import createRepulsorAttractor from './repulsor';
 
 
 const scenePresets = {
@@ -17,7 +19,9 @@ const scenePresets = {
   'Collision (builtin/Octree)': createCollisionTest,
   'Collision (Rapier)': createRapierCollisionTest,
   'Collision (Jolt)': createJoltCollisionTest,
-  'Force Fields': createForceFields,
+  'Wind': createWind,
+  'Repulsor / Attractor': createRepulsorAttractor,
+  'Vortex': createVortex,
 };
 
 export default scenePresets;

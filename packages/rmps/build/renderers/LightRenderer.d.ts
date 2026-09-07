@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
@@ -10,7 +10,7 @@ export interface PointLightOptions {
     decay?: number;
     power?: number;
 }
-export interface LightRendererOptions {
+export interface LightRendererOptions extends RendererOptions {
     brightness: DynamicValue<number>;
     rangeMultiplier: DynamicValue<number>;
     groupingRadiusRatio: number;
@@ -18,7 +18,7 @@ export interface LightRendererOptions {
     count: number;
     ratio: number;
     randomDistribution: boolean;
-    useParticleColor: boolean;
+    inheritParticleColor: boolean;
     sizeAffectsRange: boolean;
     alphaAffectsIntensity: boolean;
     lightOptions: PointLightOptions;
@@ -31,7 +31,7 @@ declare class LightRenderer extends Renderer {
     decay: number;
     ratio: number;
     randomDistribution: boolean;
-    useParticleColor: boolean;
+    inheritParticleColor: boolean;
     sizeAffectsRange: boolean;
     alphaAffectsIntensity: boolean;
     lightOptions: PointLightOptions;
@@ -41,7 +41,7 @@ declare class LightRenderer extends Renderer {
     set count(value: number);
     constructor(options?: Partial<LightRendererOptions>);
     setup(system: ParticleSystem): void;
-    update(particles: Particle[]): void;
+    _update(particles: Particle[]): void;
     private _createLight;
     private _getIntensity;
     private _getDistance;

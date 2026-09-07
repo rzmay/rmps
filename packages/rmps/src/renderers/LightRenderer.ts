@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
@@ -14,7 +14,7 @@ export interface PointLightOptions {
     power?: number;
 }
 
-export interface LightRendererOptions {
+export interface LightRendererOptions extends RendererOptions {
     brightness: DynamicValue<number>;
     rangeMultiplier: DynamicValue<number>;
     groupingRadiusRatio: number;
@@ -22,7 +22,7 @@ export interface LightRendererOptions {
     count: number;
     ratio: number;
     randomDistribution: boolean;
-    useParticleColor: boolean;
+    inheritParticleColor: boolean;
     sizeAffectsRange: boolean;
     alphaAffectsIntensity: boolean;
     lightOptions: PointLightOptions;
@@ -43,7 +43,7 @@ class LightRenderer extends Renderer {
 
     randomDistribution: boolean;
 
-    useParticleColor: boolean;
+    inheritParticleColor: boolean;
 
     sizeAffectsRange: boolean;
 
@@ -74,7 +74,7 @@ class LightRenderer extends Renderer {
     }
 
     constructor(options: Partial<LightRendererOptions> = {}) {
-      super();
+      super(options);
 
       this.brightness = options.brightness ?? 1;
       this.rangeMultiplier = options.rangeMultiplier ?? 1;
@@ -84,7 +84,7 @@ class LightRenderer extends Renderer {
       this.count = options.count ?? 50;
       this.ratio = Math.min(Math.max(options.ratio ?? 1, 0), 1);
       this.randomDistribution = options.randomDistribution ?? true;
-      this.useParticleColor = options.useParticleColor ?? true;
+      this.inheritParticleColor = options.inheritParticleColor ?? true;
       this.sizeAffectsRange = options.sizeAffectsRange ?? false;
       this.alphaAffectsIntensity = options.alphaAffectsIntensity ?? false;
     }
@@ -93,7 +93,7 @@ class LightRenderer extends Renderer {
       system.add(this.lightContainer);
     }
 
-    update(particles: Particle[]): void {
+    _update(particles: Particle[]): void {
       const lightParticles = this._getLightParticles(particles);
       const groups = this._getParticleGroups(lightParticles).slice(0, this.count);
 
@@ -113,7 +113,7 @@ class LightRenderer extends Renderer {
         light.position.set(position.x, position.y, position.z);
 
         const color = new THREE.Color(this.lightOptions.color ?? 0xffffff);
-        if (this.useParticleColor) {
+        if (this.inheritParticleColor) {
           color.multiply(group.reduce(
             (sum, value) => sum.add(value.color),
             new THREE.Color(0x000000),

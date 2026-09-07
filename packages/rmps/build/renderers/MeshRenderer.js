@@ -3,7 +3,7 @@ import { Renderer } from '../Renderer';
 class MeshRenderer extends Renderer {
     constructor(options = {}) {
         var _a, _b, _c, _d, _e, _f, _g;
-        super();
+        super(options);
         this.castShadow = false;
         this.receiveShadow = false;
         this.mesh = (_a = options.mesh) !== null && _a !== void 0 ? _a : new THREE.Mesh((_b = options.geometry) !== null && _b !== void 0 ? _b : new THREE.SphereGeometry(), (_c = options.material) !== null && _c !== void 0 ? _c : new THREE.MeshStandardMaterial(options.materialOptions));
@@ -19,7 +19,7 @@ class MeshRenderer extends Renderer {
     setup(system) {
         system.add(this.instances);
     }
-    update(particles) {
+    _update(particles) {
         this.instances.count = particles.length;
         this.instances.castShadow = this.castShadow;
         this.instances.receiveShadow = this.receiveShadow;

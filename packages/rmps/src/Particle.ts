@@ -1,11 +1,13 @@
 import { nanoid } from 'nanoid';
 import * as THREE from 'three';
+import { Tag } from './types/Tag';
 
-interface ParticleOptions {
+export interface ParticleOptions {
     position: THREE.Vector3;
     rotation: THREE.Vector3;
     scale: THREE.Vector3;
     color: THREE.Color;
+    tags: Tag[];
     alpha: number;
     lifetime: number;
     mass: number;
@@ -74,6 +76,8 @@ class Particle {
 
     noise: Record<string, ParticleNoiseValues>;
 
+    tags?: Tag[];
+
     // Used to store custom data for special components
     data: any;
 
@@ -91,6 +95,7 @@ class Particle {
       this.realtime = 0;
 
       this.id = nanoid();
+      this.tags = options.tags;
 
       this.start = this.createStartValues();
       this.noise = {};

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import Module from '../Module';
-interface NoiseModuleParams {
+import Module, { ModuleOptions } from '../Module';
+export interface NoiseOptions extends Partial<ModuleOptions> {
     octaves: number;
     frequency: number;
     lacunarity: number;
@@ -17,7 +17,7 @@ declare class NoiseModule extends Module {
     offset: THREE.Vector3;
     key: string;
     private noiseGenerator;
-    constructor(key: string, options?: Partial<NoiseModuleParams>);
+    constructor(key: string, options?: Partial<NoiseOptions>);
     private generateNoise;
 }
 export default NoiseModule;

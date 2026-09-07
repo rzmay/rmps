@@ -25,7 +25,7 @@ class VelocityOverLifetime extends Module {
             if (this.options.speedModifier !== undefined) {
                 particle.speed = particle.start.speed * evaluateDynamicNumber(this.options.speedModifier, time, particle.id);
             }
-        });
+        }, options);
         this.options = options;
     }
 }

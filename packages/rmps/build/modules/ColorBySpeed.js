@@ -11,7 +11,7 @@ class ColorBySpeed extends Module {
             if (this.options.alpha !== undefined) {
                 particle.alpha = particle.start.alpha * evaluateDynamicNumber(this.options.alpha, t, particle.id);
             }
-        });
+        }, options);
         this.options = options;
     }
     getSpeedTime(speed) {

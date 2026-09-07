@@ -8,7 +8,7 @@ class MassOverLifetime extends Module {
             particle.mass = particle.start.mass
                 * evaluateDynamicNumber(this.options.mass, particle.time, particle.id)
                 * (((_a = options.multiplyMassBySize) !== null && _a !== void 0 ? _a : true) ? sizeRatio : 1);
-        });
+        }, options);
         this.options = options;
     }
 }

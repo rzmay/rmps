@@ -35,7 +35,11 @@ const BasicSprite = (texture, options = {}) => {
                 envIntensity: { value: envIntensity },
                 hasEnvMap: { value: Boolean(envMap) },
                 softParticles: { value: Boolean(softParticleDistance) },
-                softParticleDistance: { value: softParticleDistance }
+                softParticleDistance: { value: softParticleDistance },
+                sceneDepthTexture: { value: null },
+                depthResolution: { value: new THREE.Vector2() },
+                depthCameraNear: { value: 0.1 },
+                depthCameraFar: { value: 2000 },
             },
         ]), depthTest: true, depthWrite: false, lights: true, transparent: true, vertexColors: true }, materialOptions));
 };

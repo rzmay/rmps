@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/default.png';
@@ -7,19 +7,30 @@ import UnlitSprite, { UnlitSpriteOptions } from '../materials/UnlitSprite';
 import BasicSprite, { BasicSpriteOptions } from '../materials/BasicSprite';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
+import seedrandom from 'seedrandom';
 
 type SceneDepthData = {
   target: THREE.WebGLRenderTarget;
+  material: THREE.MeshDepthMaterial;
   frame: number;
   rendering: boolean;
 };
 
-export interface SpriteRendererOptions {
+type HiddenSpriteRenderer = {
+  object: THREE.Object3D;
+  visible: boolean;
+};
+
+const SPRITE_RENDERER_USER_DATA_KEY = "__rmps_spriteRenderer";
+const SCENE_DEPTH_DATA_USER_DATA_KEY = "__rmps_sceneDepthData";
+
+export interface SpriteRendererOptions extends RendererOptions {
   fps: DynamicValue<number>;
   tileSize: {x: number, y: number};
   tileMargin: {x: number, y: number};
   gridSize: {x: number, y: number};
   frames: number;
+  randomStartFrame: boolean;
   alphaMap: string | THREE.Texture;
   material: 'unlit' | 'basic';
   materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
@@ -44,6 +55,8 @@ class SpriteRenderer extends Renderer {
 
   fps: DynamicValue<number> = 1;
 
+  randomStartFrame: boolean = false;
+
   castShadow: boolean = false;
 
   softParticleDistance: number = 0;
@@ -67,7 +80,7 @@ class SpriteRenderer extends Renderer {
   private readonly points: THREE.Points;
 
   constructor(texture: string | THREE.Texture = simple, options: Partial<SpriteRendererOptions> = {}) {
-    super();
+    super(options);
 
     const textureLoader = new THREE.TextureLoader();
     this.texture = typeof texture === 'string' ? textureLoader.load(texture, (tex) => {
@@ -93,6 +106,7 @@ class SpriteRenderer extends Renderer {
       ?? 0;
 
     this.frames = options.frames ?? this.gridSize.x * this.gridSize.y;
+    this.randomStartFrame = options.randomStartFrame ?? false;
 
     this.geometry = new THREE.BufferGeometry();
 
@@ -104,14 +118,14 @@ class SpriteRenderer extends Renderer {
     this.points.castShadow = this.castShadow;
 
     // Add user data to the points so we can recognize it elsewhere
-    this.points.userData["__rmps_spriteRenderer"] = true;
+    this.points.userData[SPRITE_RENDERER_USER_DATA_KEY] = true;
   }
 
   setup(system: ParticleSystem) {
     system.add(this.points);
   }
 
-  update(particles: Particle[], system: ParticleSystem): void {
+  _update(particles: Particle[], system: ParticleSystem): void {
     // Update attributes
     this.updateAttributes(particles);
 
@@ -119,8 +133,8 @@ class SpriteRenderer extends Renderer {
     this.points.castShadow = this.castShadow;
 
     // Set uniforms for soft particles
-    this.material.uniforms.softParticles.value = Boolean(this.softParticleDistance);
-    this.material.uniforms.softParticleDistance.value = this.softParticleDistance;
+    this.setUniformValue('softParticles', Boolean(this.softParticleDistance));
+    this.setUniformValue('softParticleDistance', this.softParticleDistance);
 
     // Get depth texture for soft particles
     if (!(system.sceneRenderer instanceof THREE.WebGLRenderer)) return;
@@ -128,22 +142,27 @@ class SpriteRenderer extends Renderer {
     if (!(system.sceneCamera instanceof THREE.Camera)) return;
 
     const depthTexture = this.getSceneDepth(system.sceneRenderer, system.scene, system.sceneCamera);
-    const softParticles = this.softParticleDistance > 0 && Boolean(depthTexture);
-    this.material.uniforms.softParticles.value = softParticles;
+    const cameraNear = 'near' in system.sceneCamera ? system.sceneCamera.near : undefined;
+    const cameraFar = 'far' in system.sceneCamera ? system.sceneCamera.far : undefined;
+    const softParticles = this.softParticleDistance > 0
+      && Boolean(depthTexture)
+      && typeof cameraNear === 'number'
+      && typeof cameraFar === 'number';
 
     if (softParticles && depthTexture) {
-      this.material.uniforms.softParticles = { value: true };
-      this.material.uniforms.sceneDepthTexture = { value: depthTexture };
+      this.setUniformValue('softParticles', true);
+      this.setUniformValue('sceneDepthTexture', depthTexture);
 
-      this.material.uniforms.depthResolution = { value: new THREE.Vector2() }
-      system.sceneRenderer.getDrawingBufferSize(this.material.uniforms.depthResolution.value);
+      const depthResolution = this.getUniformValue<THREE.Vector2>(
+        'depthResolution',
+        () => new THREE.Vector2(),
+      );
+      system.sceneRenderer.getDrawingBufferSize(depthResolution);
 
-      if (system.sceneCamera instanceof THREE.PerspectiveCamera) {
-        this.material.uniforms.depthCameraNear = { value: system.sceneCamera.near };
-        this.material.uniforms.depthCameraFar = { value: system.sceneCamera.far };
-      }
+      this.setUniformValue('depthCameraNear', cameraNear);
+      this.setUniformValue('depthCameraFar', cameraFar);
     } else {
-      this.material.uniforms.softParticles = { value: false };
+      this.setUniformValue('softParticles', false);
     }
 
     const environment =
@@ -195,9 +214,15 @@ class SpriteRenderer extends Renderer {
     this.geometry.setAttribute('frame', new THREE.BufferAttribute(
       new Float32Array(
         particles.flatMap(
-          (particle: Particle) => Math.floor(
-            particle.realtime * evaluateDynamicNumber(this.fps, particle.time, particle.id),
-          ) % this.frames,
+          (particle: Particle) => (
+            this.randomStartFrame
+              ? Math.floor(seedrandom(particle.id).quick() * this.frames)
+              : 0
+          ) + (
+            Math.floor(
+              particle.realtime * evaluateDynamicNumber(this.fps, particle.time, particle.id),
+            ) % this.frames
+          ),
         ),
       ),
       1,
@@ -328,12 +353,22 @@ class SpriteRenderer extends Renderer {
     this.material.needsUpdate = true;
   }
 
+  private setUniformValue<T>(name: string, value: T): void {
+    this.material.uniforms[name] ??= { value };
+    this.material.uniforms[name].value = value;
+  }
+
+  private getUniformValue<T>(name: string, create: () => T): T {
+    this.material.uniforms[name] ??= { value: create() };
+    return this.material.uniforms[name].value as T;
+  }
+
   private getSceneDepth(
     renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     camera: THREE.Camera,
   ): THREE.DepthTexture | undefined {
-    let data = scene.userData["__rmps_sceneDepthData"] as SceneDepthData | undefined;
+    let data = scene.userData[SCENE_DEPTH_DATA_USER_DATA_KEY] as SceneDepthData | undefined;
 
     if (!data) {
       const size = renderer.getDrawingBufferSize(new THREE.Vector2());
@@ -353,13 +388,19 @@ class SpriteRenderer extends Renderer {
         },
       );
 
+      const material = new THREE.MeshDepthMaterial({
+        depthPacking: THREE.BasicDepthPacking,
+      });
+      material.colorWrite = false;
+
       data = {
         target,
+        material,
         frame: -1,
         rendering: false,
       };
 
-      scene.userData["__rmps_sceneDepthData"] = data;
+      scene.userData[SCENE_DEPTH_DATA_USER_DATA_KEY] = data;
     }
 
     if (data.rendering) {
@@ -390,22 +431,49 @@ class SpriteRenderer extends Renderer {
     }
 
     const previousTarget = renderer.getRenderTarget();
+    const previousOverrideMaterial = scene.overrideMaterial;
+    const hiddenSpriteRenderers = this.hideSpriteRenderers(scene);
 
-    renderer.setRenderTarget(data.target);
-    renderer.clear();
+    try {
+      scene.overrideMaterial = data.material;
 
-    renderer.render(
-      scene,
-      camera,
-    );
+      renderer.setRenderTarget(data.target);
+      renderer.clear();
 
-    renderer.setRenderTarget(
-      previousTarget,
-    );
+      renderer.render(scene, camera);
 
-    data.rendering = false;
+      data.frame = renderer.info.render.frame;
+    } finally {
+      renderer.setRenderTarget(previousTarget);
+      scene.overrideMaterial = previousOverrideMaterial;
+      this.restoreSpriteRenderers(hiddenSpriteRenderers);
+      data.rendering = false;
+    }
 
     return data.target.depthTexture ?? undefined;
+  }
+
+  private hideSpriteRenderers(scene: THREE.Scene): HiddenSpriteRenderer[] {
+    const hidden: HiddenSpriteRenderer[] = [];
+
+    scene.traverse((object) => {
+      if (!object.userData[SPRITE_RENDERER_USER_DATA_KEY]) return;
+
+      hidden.push({
+        object,
+        visible: object.visible,
+      });
+
+      object.visible = false;
+    });
+
+    return hidden;
+  }
+
+  private restoreSpriteRenderers(hidden: HiddenSpriteRenderer[]): void {
+    hidden.forEach(({ object, visible }) => {
+      object.visible = visible;
+    });
   }
 }
 

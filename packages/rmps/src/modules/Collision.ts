@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
@@ -10,7 +10,7 @@ import ParticleSystem from '../ParticleSystem';
 
 export type CollisionListener = (particle: Particle, collision: CollisionHit) => void;
 
-export interface CollisionOptions {
+export interface CollisionOptions extends Partial<ModuleOptions> {
   backend: ICollisionBackend;
   dampen: DynamicValue<number>;
   bounce: DynamicValue<number>;
@@ -41,10 +41,10 @@ class Collision extends Module {
 
   constructor(options: Partial<CollisionOptions> = {}) {
     // Priority > 0, occurs after movement
-    super((particle) => this.collide(particle), 1);
+    super((particle) => this.collide(particle), { ...options, priority: 1 });
 
     // Priority < 0, cache position before movement
-    this.dependents = [new Module((particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone())];
+    this.dependents = [new Module((particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone(), { ...options, priority: -1 })];
 
     this.dampen = options.dampen ?? this.dampen;
     this.bounce = options.bounce ?? this.bounce;
@@ -111,6 +111,7 @@ class Collision extends Module {
 
     // Collision callbacks
     this.collisionListeners.forEach((listener) => listener(particle, hit));
+    this._system.notifyCollision(particle, hit);
 
     const inverseWorld = this._system.matrixWorld.clone().invert();
 

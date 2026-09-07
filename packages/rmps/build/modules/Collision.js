@@ -6,7 +6,7 @@ class Collision extends Module {
     constructor(options = {}) {
         var _a, _b, _c, _d, _e, _f, _g;
         // Priority > 0, occurs after movement
-        super((particle) => this.collide(particle), 1);
+        super((particle) => this.collide(particle), Object.assign(Object.assign({}, options), { priority: 1 }));
         this.dampen = 0;
         this.bounce = 1;
         this.lifetimeLoss = 0;
@@ -16,7 +16,7 @@ class Collision extends Module {
         this.maxKillSpeed = Number.POSITIVE_INFINITY;
         this.collisionListeners = [];
         // Priority < 0, cache position before movement
-        this.dependents = [new Module((particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone())];
+        this.dependents = [new Module((particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone(), Object.assign(Object.assign({}, options), { priority: -1 }))];
         this.dampen = (_a = options.dampen) !== null && _a !== void 0 ? _a : this.dampen;
         this.bounce = (_b = options.bounce) !== null && _b !== void 0 ? _b : this.bounce;
         this.lifetimeLoss = (_c = options.lifetimeLoss) !== null && _c !== void 0 ? _c : this.lifetimeLoss;
@@ -68,6 +68,7 @@ class Collision extends Module {
             return;
         // Collision callbacks
         this.collisionListeners.forEach((listener) => listener(particle, hit));
+        this._system.notifyCollision(particle, hit);
         const inverseWorld = this._system.matrixWorld.clone().invert();
         hit.point = this._system.worldToLocal(hit.point.clone());
         if (hit.position) {

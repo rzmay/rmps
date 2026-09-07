@@ -5,7 +5,7 @@ class ForceOverLifetime extends Module {
         super((particle) => {
             particle.acceleration = particle.start.acceleration.clone()
                 .add(evaluateDynamicVector(this.options.force, particle.time, particle.id));
-        });
+        }, options);
         this.options = options;
     }
 }

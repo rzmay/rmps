@@ -1,9 +1,9 @@
 import { makeNoise4D } from 'fast-simplex-noise';
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 
-interface NoiseModuleParams {
+export interface NoiseOptions extends Partial<ModuleOptions> {
     octaves: number;
     frequency: number;
     lacunarity: number;
@@ -29,13 +29,13 @@ class NoiseModule extends Module {
 
     private noiseGenerator = makeNoise4D();
 
-    constructor(key: string, options: Partial<NoiseModuleParams> = {}) {
+    constructor(key: string, options: Partial<NoiseOptions> = {}) {
       super((particle: Particle) => {
         particle.noise[key] = {
           noise: this.generateNoise(particle),
           noise4d: this.generateNoise(particle, true),
         };
-      });
+      }, options);
 
       this.key = key;
       this.octaves = options.octaves ?? this.octaves;

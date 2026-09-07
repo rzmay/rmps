@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
-export interface ColorOverLifetimeOptions {
+export interface ColorOverLifetimeOptions extends Partial<ModuleOptions> {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
 }

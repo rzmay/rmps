@@ -33,6 +33,10 @@ const UnlitSprite = (
       hasAlphaMap: { value: Boolean(alphaMap) },
       softParticles: { value: Boolean(softParticleDistance) },
       softParticleDistance: { value: softParticleDistance },
+      sceneDepthTexture: { value: null },
+      depthResolution: { value: new THREE.Vector2() },
+      depthCameraNear: { value: 0.1 },
+      depthCameraFar: { value: 2000 },
     },
 
     depthTest: true,

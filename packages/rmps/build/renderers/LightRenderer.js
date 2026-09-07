@@ -17,7 +17,7 @@ class LightRenderer extends Renderer {
     }
     constructor(options = {}) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
-        super();
+        super(options);
         this.lights = [];
         this.lightContainer = new THREE.Object3D();
         this._count = 0;
@@ -29,14 +29,14 @@ class LightRenderer extends Renderer {
         this.count = (_g = options.count) !== null && _g !== void 0 ? _g : 50;
         this.ratio = Math.min(Math.max((_h = options.ratio) !== null && _h !== void 0 ? _h : 1, 0), 1);
         this.randomDistribution = (_j = options.randomDistribution) !== null && _j !== void 0 ? _j : true;
-        this.useParticleColor = (_k = options.useParticleColor) !== null && _k !== void 0 ? _k : true;
+        this.inheritParticleColor = (_k = options.inheritParticleColor) !== null && _k !== void 0 ? _k : true;
         this.sizeAffectsRange = (_l = options.sizeAffectsRange) !== null && _l !== void 0 ? _l : false;
         this.alphaAffectsIntensity = (_m = options.alphaAffectsIntensity) !== null && _m !== void 0 ? _m : false;
     }
     setup(system) {
         system.add(this.lightContainer);
     }
-    update(particles) {
+    _update(particles) {
         const lightParticles = this._getLightParticles(particles);
         const groups = this._getParticleGroups(lightParticles).slice(0, this.count);
         if (groups.length < this.lights.length) {
@@ -51,7 +51,7 @@ class LightRenderer extends Renderer {
             const position = group.reduce((sum, value) => sum.add(value.position), new THREE.Vector3(0, 0, 0)).divideScalar(group.length);
             light.position.set(position.x, position.y, position.z);
             const color = new THREE.Color((_a = this.lightOptions.color) !== null && _a !== void 0 ? _a : 0xffffff);
-            if (this.useParticleColor) {
+            if (this.inheritParticleColor) {
                 color.multiply(group.reduce((sum, value) => sum.add(value.color), new THREE.Color(0x000000)).multiplyScalar(1 / group.length));
             }
             light.color = color;

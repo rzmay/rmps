@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 
@@ -12,7 +12,7 @@ import Particle from '../Particle';
   * mesh will take precedent over geometry, material, and materialOptions.
   * material will take precedent over materialOptions.
 */
-export interface MeshRendererOptions {
+export interface MeshRendererOptions extends RendererOptions {
     mesh: THREE.Mesh;
     maxParticles: number;
     geometry: THREE.BufferGeometry,
@@ -36,7 +36,7 @@ class MeshRenderer extends Renderer {
     private dummy: THREE.Object3D;
 
     constructor(options: Partial<MeshRendererOptions> = {}) {
-      super();
+      super(options);
 
       this.mesh = options.mesh ?? new THREE.Mesh(
         options.geometry ?? new THREE.SphereGeometry(),
@@ -67,7 +67,7 @@ class MeshRenderer extends Renderer {
       system.add(this.instances);
     }
 
-    update(particles: Particle[]): void {
+    _update(particles: Particle[]): void {
       this.instances.count = particles.length;
 
       this.instances.castShadow = this.castShadow;

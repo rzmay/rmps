@@ -4,4 +4,4 @@ export type DynamicValue<T> =
     | [DynamicValue<T>, DynamicValue<T>]
     | Set<DynamicValue<T>>;
 
-export type dynamicValue<T> = DynamicValue<T>;
+export type DynamicUntimedValue<T> = Exclude<DynamicValue<T>, ((t: number) => DynamicValue<T>)>

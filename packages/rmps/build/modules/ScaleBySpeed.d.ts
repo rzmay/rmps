@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
 import { SpeedRange } from './ColorBySpeed';
-export interface ScaleBySpeedOptions {
+export interface ScaleBySpeedOptions extends Partial<ModuleOptions> {
     scale: DynamicValue<THREE.Vector3>;
     speedRange?: SpeedRange;
 }

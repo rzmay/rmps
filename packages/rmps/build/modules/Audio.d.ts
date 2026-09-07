@@ -1,11 +1,17 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
+import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import { DynamicValue } from '../types/DynamicValue';
-export interface AudioOptions {
-    listener?: THREE.AudioListener;
-    sound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
-    onCollisionSound?: AudioBuffer | [AudioBuffer, ...AudioBuffer[]];
+import { StrictMultiple } from '../types/Multiple';
+export interface AudioOptions extends Partial<ModuleOptions> {
+    listener: THREE.AudioListener;
+    sound: StrictMultiple<AudioBuffer>;
+    onCollisionSound: StrictMultiple<AudioBuffer>;
+    onSpawnSound: StrictMultiple<AudioBuffer>;
+    onDeathSound: StrictMultiple<AudioBuffer>;
+    shouldPlay: (particle: Particle) => boolean;
+    loop: boolean;
     ratio: number;
     collisionRatio: number;
     pitch: DynamicValue<number>;
@@ -19,8 +25,12 @@ export interface AudioOptions {
 }
 declare class Audio extends Module {
     listener?: THREE.AudioListener;
-    sound?: [AudioBuffer, ...AudioBuffer[]];
-    onCollisionSound?: [AudioBuffer, ...AudioBuffer[]];
+    sound?: AudioBuffer[];
+    onCollisionSound?: AudioBuffer[];
+    onSpawnSound?: AudioBuffer[];
+    onDeathSound?: AudioBuffer[];
+    shouldPlay: (particle: Particle) => boolean;
+    loop: boolean;
     ratio: number;
     collisionRatio: number;
     pitch: DynamicValue<number>;
@@ -33,13 +43,13 @@ declare class Audio extends Module {
     speedAffectsVolume: number;
     private _system?;
     private _particleAudio;
-    private _collisionAudio;
-    private _collision?;
-    private _setUpCollision;
+    private _eventAudio;
+    private _setupCallbacks;
     constructor(options?: Partial<AudioOptions>);
     prepare(system: ParticleSystem): void;
     private _updateParticle;
-    private _handleCollision;
+    private _handleEvent;
+    private _playOneShot;
     private _getPitch;
     private _getVolume;
     private _getEffect;

@@ -4,7 +4,7 @@ class RotationBySpeed extends Module {
     constructor(options) {
         super((particle) => {
             particle.angularVelocity = particle.start.angularVelocity.clone().add(evaluateDynamicVector(this.options.angularVelocity, this.getSpeedTime(particle.velocity.length()), particle.id));
-        });
+        }, options);
         this.options = options;
     }
     getSpeedTime(speed) {

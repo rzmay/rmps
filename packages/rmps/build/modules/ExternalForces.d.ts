@@ -1,9 +1,9 @@
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
 import { IParticleForceField } from '../interfaces/IParticleForceField';
 import ParticleForceField from '../ParticleForceField';
 import ParticleSystem from '../ParticleSystem';
-export interface ExternalForcesOptions {
+export interface ExternalForcesOptions extends Partial<ModuleOptions> {
     multiplier?: DynamicValue<number>;
     forceFieldFilter?: (forceField: ParticleForceField) => boolean;
     forceFields?: IParticleForceField[];

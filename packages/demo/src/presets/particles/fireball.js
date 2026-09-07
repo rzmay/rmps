@@ -57,7 +57,7 @@ export default async function createFireball() {
         count: 18,
         ratio: 0.3,
         randomDistribution: true,
-        useParticleColor: true,
+        inheritParticleColor: true,
         sizeAffectsRange: true,
         alphaAffectsIntensity: true,
         brightness: 5,

@@ -12,5 +12,5 @@ export default function evaluateDynamicColor(
     (a, b, t) => (a.clone().add((b.clone().sub(a).multiplyScalar(t)))),
     time,
     seed,
-  );
+  ).clone();
 }

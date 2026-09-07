@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import evaluateDynamicVector from '../helpers/evaluateDynamicVector3';
 
-export interface LimitVelocityOverLifetimeOptions {
+export interface LimitVelocityOverLifetimeOptions extends Partial<ModuleOptions> {
     limit: DynamicValue<THREE.Vector3>;
     dampen?: number;
     drag?: DynamicValue<number>;
@@ -34,7 +34,7 @@ class LimitVelocityOverLifetime extends Module {
 
         particle.velocity.multiplyScalar(Math.max(0, 1 - drag * deltaTime));
       }
-    });
+    }, options);
   }
 
   // eslint-disable-next-line class-methods-use-this

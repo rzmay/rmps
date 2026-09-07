@@ -20,7 +20,7 @@ export var TrailTextureMode;
 class TrailRenderer extends Renderer {
     constructor(options = {}) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
-        super();
+        super(options);
         this.mode = TrailMode.Particle;
         this.ratio = 1;
         this.lifetime = 1;
@@ -65,17 +65,16 @@ class TrailRenderer extends Renderer {
     }
     setup(system) {
         system.add(this.mesh);
-        this.camera = system.sceneCamera;
     }
-    update(particles) {
+    _update(particles, system) {
         this.particles = particles;
         this.mesh.castShadow = this.castShadow;
         this.mesh.receiveShadow = this.receiveShadow;
         if (this.mode === TrailMode.Particle) {
             this.updateParticleTrails(particles);
         }
-        if (this.camera) {
-            this.rebuildGeometry(this.camera);
+        if (system.sceneCamera) {
+            this.rebuildGeometry(system.sceneCamera);
         }
     }
     destroy() {

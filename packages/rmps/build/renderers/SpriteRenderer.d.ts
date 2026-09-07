@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import { UnlitSpriteOptions } from '../materials/UnlitSprite';
 import { BasicSpriteOptions } from '../materials/BasicSprite';
 import { DynamicValue } from '../types/DynamicValue';
-export interface SpriteRendererOptions {
+export interface SpriteRendererOptions extends RendererOptions {
     fps: DynamicValue<number>;
     tileSize: {
         x: number;
@@ -20,6 +20,7 @@ export interface SpriteRendererOptions {
         y: number;
     };
     frames: number;
+    randomStartFrame: boolean;
     alphaMap: string | THREE.Texture;
     material: 'unlit' | 'basic';
     materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
@@ -35,6 +36,7 @@ declare class SpriteRenderer extends Renderer {
     tileMargin: THREE.Vector2;
     gridSize: THREE.Vector2;
     fps: DynamicValue<number>;
+    randomStartFrame: boolean;
     castShadow: boolean;
     softParticleDistance: number;
     private material;
@@ -48,12 +50,16 @@ declare class SpriteRenderer extends Renderer {
     private readonly points;
     constructor(texture?: string | THREE.Texture, options?: Partial<SpriteRendererOptions>);
     setup(system: ParticleSystem): void;
-    update(particles: Particle[], system: ParticleSystem): void;
+    _update(particles: Particle[], system: ParticleSystem): void;
     private updateAttributes;
     destroy(): void;
     private loadMaterial;
     private updateEnvironmentMap;
     private setEnvironmentMap;
+    private setUniformValue;
+    private getUniformValue;
     private getSceneDepth;
+    private hideSpriteRenderers;
+    private restoreSpriteRenderers;
 }
 export default SpriteRenderer;

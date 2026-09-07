@@ -1,35 +1,52 @@
 import * as THREE from 'three';
 import Module from '../Module';
-import Collision from './Collision';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import particleRatio from '../helpers/particleRatio';
+import acceptMultiple from '../helpers/acceptMultiple';
+// TODO: onSpawn sound, onDeath sound
 class Audio extends Module {
     constructor(options = {}) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-        super((particle) => this._updateParticle(particle));
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        super((particle) => this._updateParticle(particle), options);
+        this.shouldPlay = () => true;
+        this.loop = true;
         this._particleAudio = new Map();
-        this._collisionAudio = new Set();
-        this._setUpCollision = false;
+        this._eventAudio = new Set();
+        this._setupCallbacks = false;
         this.listener = options.listener;
         this.sound = options.sound
-            ? (Array.isArray(options.sound) ? options.sound : [options.sound])
+            ? acceptMultiple(options.sound)
             : undefined;
         this.onCollisionSound = options.onCollisionSound
-            ? (Array.isArray(options.onCollisionSound) ? options.onCollisionSound : [options.onCollisionSound])
+            ? acceptMultiple(options.onCollisionSound)
             : undefined;
-        this.ratio = THREE.MathUtils.clamp((_a = options.ratio) !== null && _a !== void 0 ? _a : 1, 0, 1);
-        this.collisionRatio = THREE.MathUtils.clamp((_b = options.collisionRatio) !== null && _b !== void 0 ? _b : this.ratio, 0, 1);
-        this.pitch = (_c = options.pitch) !== null && _c !== void 0 ? _c : 1;
-        this.volume = (_d = options.volume) !== null && _d !== void 0 ? _d : 1;
-        this.sizeAffectsPitch = Math.max(0, (_e = options.sizeAffectsPitch) !== null && _e !== void 0 ? _e : 0);
-        this.sizeAffectsVolume = Math.max(0, (_f = options.sizeAffectsVolume) !== null && _f !== void 0 ? _f : 0);
-        this.alphaAffectsPitch = Math.max(0, (_g = options.alphaAffectsPitch) !== null && _g !== void 0 ? _g : 0);
-        this.alphaAffectsVolume = Math.max(0, (_h = options.alphaAffectsVolume) !== null && _h !== void 0 ? _h : 0);
-        this.speedAffectsPitch = Math.max(0, (_j = options.speedAffectsPitch) !== null && _j !== void 0 ? _j : 0);
-        this.speedAffectsVolume = Math.max(0, (_k = options.speedAffectsVolume) !== null && _k !== void 0 ? _k : 0);
+        this.onSpawnSound = options.onSpawnSound
+            ? acceptMultiple(options.onSpawnSound)
+            : undefined;
+        this.onDeathSound = options.onDeathSound
+            ? acceptMultiple(options.onDeathSound)
+            : undefined;
+        this.shouldPlay = (_a = options.shouldPlay) !== null && _a !== void 0 ? _a : this.shouldPlay;
+        this.loop = (_b = options.loop) !== null && _b !== void 0 ? _b : this.loop;
+        this.ratio = THREE.MathUtils.clamp((_c = options.ratio) !== null && _c !== void 0 ? _c : 1, 0, 1);
+        this.collisionRatio = THREE.MathUtils.clamp((_d = options.collisionRatio) !== null && _d !== void 0 ? _d : this.ratio, 0, 1);
+        this.pitch = (_e = options.pitch) !== null && _e !== void 0 ? _e : 1;
+        this.volume = (_f = options.volume) !== null && _f !== void 0 ? _f : 1;
+        this.sizeAffectsPitch = Math.max(0, (_g = options.sizeAffectsPitch) !== null && _g !== void 0 ? _g : 0);
+        this.sizeAffectsVolume = Math.max(0, (_h = options.sizeAffectsVolume) !== null && _h !== void 0 ? _h : 0);
+        this.alphaAffectsPitch = Math.max(0, (_j = options.alphaAffectsPitch) !== null && _j !== void 0 ? _j : 0);
+        this.alphaAffectsVolume = Math.max(0, (_k = options.alphaAffectsVolume) !== null && _k !== void 0 ? _k : 0);
+        this.speedAffectsPitch = Math.max(0, (_l = options.speedAffectsPitch) !== null && _l !== void 0 ? _l : 0);
+        this.speedAffectsVolume = Math.max(0, (_m = options.speedAffectsVolume) !== null && _m !== void 0 ? _m : 0);
     }
     prepare(system) {
         this._system = system;
+        if (!this._setupCallbacks) {
+            system.onCollision((particle, _) => this._handleEvent(particle, this.onCollisionSound));
+            system.onDeath((particle) => this._handleEvent(particle, this.onDeathSound));
+            system.onSpawn((particle) => this._handleEvent(particle, this.onSpawnSound));
+            this._setupCallbacks = true;
+        }
         if (!this.listener) {
             // Try to get listener from cache
             if (system.scene)
@@ -51,21 +68,12 @@ class Audio extends Module {
             if (this.listener && system.scene)
                 system.scene.userData["__rmps_audioListener"] = this.listener;
         }
-        if (this.onCollisionSound && !this._setUpCollision) {
-            this._collision = system.modules
-                .flatMap((module) => module.withDependents())
-                .find((module) => module instanceof Collision);
-            if (this._collision) {
-                this._collision.onCollision((particle, hit) => this._handleCollision(particle, hit));
-                this._setUpCollision = true;
-            }
-        }
         this._cleanParticleAudio(system.particles);
     }
     _updateParticle(particle) {
         if (!this.listener || !this.sound || !this._system)
             return;
-        if (!particleRatio(particle, this.ratio)) {
+        if (!particleRatio(particle, this.ratio) || !this.shouldPlay(particle)) {
             this._removeParticleAudio(particle.id);
             return;
         }
@@ -74,7 +82,7 @@ class Audio extends Module {
             const audio = new THREE.PositionalAudio(this.listener);
             const sound = this.sound[Math.floor(Math.random() * this.sound.length)];
             audio.setBuffer(sound);
-            audio.setLoop(true);
+            audio.setLoop(this.loop);
             this._system.add(audio);
             state = {
                 audio,
@@ -87,21 +95,26 @@ class Audio extends Module {
         state.audio.setPlaybackRate(this._getPitch(particle));
         state.audio.setVolume(this._getVolume(particle));
     }
-    _handleCollision(particle, _hit) {
-        if (!this.listener
-            || !this.onCollisionSound
-            || !this._system
-            || !particleRatio(particle, this.collisionRatio)) {
+    _handleEvent(particle, audio) {
+        if (!audio
+            || (audio === null || audio === void 0 ? void 0 : audio.length) === 0
+            || !particleRatio(particle, this.collisionRatio)
+            || !this.shouldPlay(particle)) {
             return;
         }
+        this._playOneShot(audio[Math.floor(Math.random() * audio.length)], particle);
+    }
+    _playOneShot(clip, particle) {
+        if (!this.listener || !this._system)
+            return;
         const audio = new THREE.PositionalAudio(this.listener);
-        audio.setBuffer(this.onCollisionSound[Math.floor(Math.random() * this.onCollisionSound.length)]);
+        audio.setBuffer(clip);
         audio.setLoop(false);
         audio.position.copy(particle.position);
         audio.setPlaybackRate(this._getPitch(particle));
         audio.setVolume(this._getVolume(particle));
         this._system.add(audio);
-        this._collisionAudio.add(audio);
+        this._eventAudio.add(audio);
         audio.play();
         /*
          * THREE.Audio creates a new AudioBufferSourceNode when play() is
@@ -109,7 +122,7 @@ class Audio extends Module {
          */
         if (audio.source) {
             audio.source.addEventListener('ended', () => {
-                this._collisionAudio.delete(audio);
+                this._eventAudio.delete(audio);
                 audio.removeFromParent();
             });
         }
@@ -156,13 +169,13 @@ class Audio extends Module {
         this._particleAudio.forEach((_state, id) => {
             this._removeParticleAudio(id);
         });
-        this._collisionAudio.forEach((audio) => {
+        this._eventAudio.forEach((audio) => {
             if (audio.isPlaying) {
                 audio.stop();
             }
             audio.removeFromParent();
         });
-        this._collisionAudio.clear();
+        this._eventAudio.clear();
     }
 }
 export default Audio;

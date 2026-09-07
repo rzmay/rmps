@@ -8,7 +8,6 @@ import {
   ParticleSystem,
   ScaleOverLifetime,
   SpriteRenderer,
-  TransformByNoise,
   EmissionSource,
 } from 'rmps';
 import circleSprite from 'url:../../assets/images/circle.png';

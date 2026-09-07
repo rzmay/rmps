@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
-export interface MeshRendererOptions {
+export interface MeshRendererOptions extends RendererOptions {
     mesh: THREE.Mesh;
     maxParticles: number;
     geometry: THREE.BufferGeometry;
@@ -20,7 +20,7 @@ declare class MeshRenderer extends Renderer {
     private dummy;
     constructor(options?: Partial<MeshRendererOptions>);
     setup(system: ParticleSystem): void;
-    update(particles: Particle[]): void;
+    _update(particles: Particle[]): void;
     destroy(): void;
     private preprocessMaterial;
 }

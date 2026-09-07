@@ -1,10 +1,10 @@
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import { ICollisionBackend, CollisionHit } from '../interfaces/ICollisionBackend';
 import ParticleSystem from '../ParticleSystem';
 export type CollisionListener = (particle: Particle, collision: CollisionHit) => void;
-export interface CollisionOptions {
+export interface CollisionOptions extends Partial<ModuleOptions> {
     backend: ICollisionBackend;
     dampen: DynamicValue<number>;
     bounce: DynamicValue<number>;

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import Particle from '../Particle';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicVector from '../helpers/evaluateDynamicVector3';
 import { SpeedRange } from './ColorBySpeed';
 
-export interface ScaleBySpeedOptions {
+export interface ScaleBySpeedOptions extends Partial<ModuleOptions> {
     scale: DynamicValue<THREE.Vector3>;
     speedRange?: SpeedRange;
 }
@@ -16,7 +16,7 @@ class ScaleBySpeed extends Module {
       particle.scale = particle.start.scale.clone().multiply(
         evaluateDynamicVector(this.options.scale, this.getSpeedTime(particle.velocity.length()), particle.id),
       );
-    });
+    }, options);
   }
 
   private getSpeedTime(speed: number): number {

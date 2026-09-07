@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
-export interface LimitVelocityOverLifetimeOptions {
+export interface LimitVelocityOverLifetimeOptions extends Partial<ModuleOptions> {
     limit: DynamicValue<THREE.Vector3>;
     dampen?: number;
     drag?: DynamicValue<number>;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import { Renderer } from '../Renderer';
+import { Renderer, RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 
@@ -24,7 +24,7 @@ export enum TrailTextureMode {
 };
 
 
-export interface TrailRendererOptions {
+export interface TrailRendererOptions extends RendererOptions {
   mode: TrailMode;
   textureMode: TrailTextureMode;
 
@@ -129,12 +129,10 @@ class TrailRenderer extends Renderer {
   private trails: Map<string, ParticleTrail> =
     new Map();
 
-  private camera?: THREE.Camera;
-
   constructor(
     options: Partial<TrailRendererOptions> = {},
   ) {
-    super();
+    super(options);
 
     this.mode = options.mode ?? this.mode;
     this.ratio = options.ratio ?? this.ratio;
@@ -180,11 +178,9 @@ class TrailRenderer extends Renderer {
 
   setup(system: ParticleSystem): void {
     system.add(this.mesh);
-
-    this.camera = system.sceneCamera;
   }
 
-  update(particles: Particle[]): void {
+  _update(particles: Particle[], system: ParticleSystem): void {
     this.particles = particles;
 
     this.mesh.castShadow = this.castShadow;
@@ -196,8 +192,8 @@ class TrailRenderer extends Renderer {
       );
     }
 
-    if (this.camera) {
-        this.rebuildGeometry(this.camera);
+    if (system.sceneCamera) {
+      this.rebuildGeometry(system.sceneCamera);
     }
   }
 

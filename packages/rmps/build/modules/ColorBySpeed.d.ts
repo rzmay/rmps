@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import Module from '../Module';
+import Module, { ModuleOptions } from '../Module';
 import { DynamicValue } from '../types/DynamicValue';
 export type SpeedRange = [number, number] | {
     min: number;
     max: number;
 };
-export interface ColorBySpeedOptions {
+export interface ColorBySpeedOptions extends Partial<ModuleOptions> {
     color?: DynamicValue<THREE.Color>;
     alpha?: DynamicValue<number>;
     speedRange?: SpeedRange;

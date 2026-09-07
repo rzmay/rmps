@@ -10,7 +10,7 @@ class ExternalForces extends Module {
             this.forceFields.forEach((forceField) => {
                 particle.acceleration.addScaledVector(forceField.getForce(particle, deltaTime), multiplier);
             });
-        });
+        }, options);
         this.multiplier = 1;
         this.forceFields = new Set();
         this.explicitForceFields = options.forceFields;

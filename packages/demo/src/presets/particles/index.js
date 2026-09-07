@@ -4,6 +4,7 @@ import createCollision from './collision';
 import createCubes from './cubes';
 import createFire from './fire';
 import createFireball from './fireball';
+import createFireworks from './fireworks';
 import createParticleTrail from './particleTrail';
 import createRibbonTrail from './ribbonTrail';
 import createSmoke from './smoke';
@@ -11,6 +12,7 @@ import createSnow from './snow';
 import createSpheres from './spheres';
 import createSuzanne from './suzanne';
 import createSuzannes from './suzanneInstances';
+import createTags from './tags';
 
 const particlePresets = {
   Fire: createFire,
@@ -26,6 +28,8 @@ const particlePresets = {
   "Ribbon Trail": createRibbonTrail,
   Collision: createCollision,
   "Bubbles (Audio)": createBubbles,
+  "Fireworks (Subsystems)": createFireworks,
+  "Cubes and Spheres (Tags)": createTags,
 };
 
 export default particlePresets;
