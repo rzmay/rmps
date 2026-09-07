@@ -14,12 +14,12 @@ import { CollisionHit } from './interfaces/ICollisionBackend';
 import { Tag } from './types/Tag';
 
 interface ParticleSystemOptions {
-    emitters: Multiple<Emitter>;
-    renderers: Multiple<Renderer>;
-    modules: Multiple<Module>;
-    gravity: THREE.Vector3;
-    gravityModifier: DynamicValue<number>;
-    simulationSpace: SimulationSpace;
+  emitters: Multiple<Emitter>;
+  renderers: Multiple<Renderer>;
+  modules: Multiple<Module>;
+  gravity: THREE.Vector3;
+  gravityModifier: DynamicValue<number>;
+  simulationSpace: SimulationSpace;
 }
 
 export interface SubSystemOptions {
@@ -112,6 +112,7 @@ class ParticleSystem extends THREE.Object3D {
     // but if either gravity or gravityModifier are specified, they will be used.
     this.gravity = options.gravity ?? new THREE.Vector3(0, -9.81, 0);
     this.gravityModifier = options.gravityModifier ?? (options.gravity ? 1 : 0);
+
     this._simulationSpace = options.simulationSpace ?? this._simulationSpace;
     this._worldRendererRoot.name = 'ParticleSystem World Renderers';
 
@@ -174,37 +175,59 @@ class ParticleSystem extends THREE.Object3D {
       .flatMap((module) => module.withDependents())
       .forEach((module) => module.prepare(this, this.deltaTime));
 
-    this.particles.forEach((particle, index) => {
-      this.modules
-        .flatMap((module) => module.withDependents())
-        .filter((module) => module.priority < 0)
-        .forEach((module) => module.modify(particle, this.deltaTime));
+    // Run pre modules
+    this.modules
+      .flatMap((module) => module.withDependents())
+      .filter((module) => module.priority < 0)
+      .forEach((module) => module.modify(this.particles, this.deltaTime));
 
-      particle.velocity.addScaledVector(
-        this.gravity,
-        this.deltaTime * evaluateDynamicNumber(this.gravityModifier, particle.time, particle.id),
-      );
+    // Update particles
+    this._updateParticles();
 
-      particle.update(this.deltaTime);
-
-      this.modules
-        .flatMap((module) => module.withDependents())
-        .filter((module) => module.priority >= 0)
-        .sort((a, b) => a.priority - b.priority)
-        .forEach((module) => module.modify(particle, this.deltaTime));
-
-      if (Date.now() - particle.startTime > particle.lifetime * 1000) {
-        this._notifyDeath(particle);
-        this.particles.splice(index, 1);
-
-        this.subSystems.forEach((_options, subSystem) => {
-          subSystem.emitters.forEach((emitter) => emitter.clearContext(particle.id));
-        });
-      }
-    });
+    // Run post modules
+    this.modules
+      .flatMap((module) => module.withDependents())
+      .filter((module) => module.priority >= 0)
+      .sort((a, b) => a.priority - b.priority)
+      .forEach((module) => module.modify(this.particles, this.deltaTime));
 
     this.renderers.forEach((renderer) => {
       renderer.update(this.particles, this);
+    });
+  }
+
+  private _updateParticles() {
+    // Iterate over a copy of particles so that we can safely splice particles on death inside the loop
+    [...this.particles].forEach((p, index) => {
+      // Apply gravity
+      p.velocity.addScaledVector(
+        this.gravity,
+        this.deltaTime * evaluateDynamicNumber(this.gravityModifier, p.time, p.id),
+      );
+
+      // Update time
+      p.realtime = (Date.now() - p.startTime) / 1000;
+      p.time = p.realtime / p.lifetime;
+
+      // Update transform
+      p.position.addScaledVector(p.velocity, this.deltaTime * p.speed);
+      p.rotation.addScaledVector(p.angularVelocity, this.deltaTime * p.speed);
+      p.scale.addScaledVector(p.scalarVelocity, this.deltaTime * p.speed);
+
+      // Update velocities
+      p.velocity.addScaledVector(p.acceleration, this.deltaTime * p.speed);
+      p.angularVelocity.addScaledVector(p.angularAcceleration, this.deltaTime * p.speed);
+      p.scalarVelocity.addScaledVector(p.scalarAcceleration, this.deltaTime * p.speed);
+
+      // Kill old particles
+      if (Date.now() - p.startTime > p.lifetime * 1000) {
+        this._notifyDeath(p);
+        this.particles.splice(index, 1);
+
+        this.subSystems.forEach((_options, subSystem) => {
+          subSystem.emitters.forEach((emitter) => emitter.clearContext(p.id));
+        });
+      }
     });
   }
 

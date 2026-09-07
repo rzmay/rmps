@@ -194,7 +194,7 @@ class Emitter {
         }
         const particle = new Particle(Object.assign({ position, rotation: evaluateDynamicVector((_d = this.initialValues.rotation) !== null && _d !== void 0 ? _d : rotation, time), scale: evaluateDynamicVector((_e = this.initialValues.scale) !== null && _e !== void 0 ? _e : new THREE.Vector3(1, 1, 1), time), lifetime: evaluateDynamicNumber((_f = this.initialValues.lifetime) !== null && _f !== void 0 ? _f : 1, time), color,
             alpha,
-            mass }, (this.tags || (context === null || context === void 0 ? void 0 : context.tags) && {
+            mass }, ((this.tags || (context === null || context === void 0 ? void 0 : context.tags)) && {
             tags: [...((_g = context === null || context === void 0 ? void 0 : context.tags) !== null && _g !== void 0 ? _g : []), ...((_h = this._selectTags()) !== null && _h !== void 0 ? _h : [])],
         })));
         particle.speed = evaluateDynamicNumber((_j = this.initialValues.speed) !== null && _j !== void 0 ? _j : 1, time);

@@ -314,7 +314,7 @@ class Emitter {
       color,
       alpha,
       mass,
-      ...(this.tags || context?.tags && {
+      ...((this.tags || context?.tags) && {
         tags: [...(context?.tags ?? []), ...(this._selectTags() ?? [])],
       }),
     });

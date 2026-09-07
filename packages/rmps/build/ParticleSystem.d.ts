@@ -64,6 +64,7 @@ declare class ParticleSystem extends THREE.Object3D {
     update(): void;
     private _calculateDeltaTime;
     private _processParticles;
+    private _updateParticles;
     private _updateSubSystems;
     private _updateAsSubSystem;
     private _updateEmissionRuns;

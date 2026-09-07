@@ -12,7 +12,7 @@ export interface ModuleOptions {
   tags: StrictMultiple<Tag>;
 }
 
-class Module {
+export default class Module {
   // Sub-modules on which this module depends.
   // Useful for pre-processing or combining priority stages.
   public dependents: Module[] = [];
@@ -29,9 +29,9 @@ class Module {
     this.priority = options.priority ?? this.priority;
   }
 
-  public modify(particle: Particle, deltaTime: number): void {
-    if (!this.tags || tagsIntersect(this.tags, particle.tags ?? []))
-      this._modify(particle, deltaTime);
+  public modify(particles: Particle[], deltaTime: number): void {
+    particles.filter((p) => !this.tags || tagsIntersect(this.tags, p.tags ?? []))
+      .forEach((p) => this._modify(p, deltaTime));
   }
 
   // Process into array including self and dependents
@@ -49,5 +49,3 @@ class Module {
   // Optional clean up hook for modules that require it
   public cleanup() { }
 }
-
-export default Module;

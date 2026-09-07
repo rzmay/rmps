@@ -1,6 +1,6 @@
 import acceptMultiple from './helpers/acceptMultiple';
 import tagsIntersect from './helpers/tagsIntersect';
-export default class Module {
+class Module {
     constructor(_modify, options = {}) {
         var _a;
         this._modify = _modify;
@@ -11,9 +11,10 @@ export default class Module {
         this.tags = acceptMultiple(options.tags);
         this.priority = (_a = options.priority) !== null && _a !== void 0 ? _a : this.priority;
     }
-    modify(particles, deltaTime) {
-        particles.filter((p) => { var _a; return !this.tags || tagsIntersect(this.tags, (_a = p.tags) !== null && _a !== void 0 ? _a : []); })
-            .forEach((p) => this._modify(p, deltaTime));
+    modify(particle, deltaTime) {
+        var _a;
+        if (!this.tags || tagsIntersect(this.tags, (_a = particle.tags) !== null && _a !== void 0 ? _a : []))
+            this._modify(particle, deltaTime);
     }
     // Process into array including self and dependents
     withDependents() {
@@ -28,3 +29,4 @@ export default class Module {
     // Optional clean up hook for modules that require it
     cleanup() { }
 }
+export default Module;

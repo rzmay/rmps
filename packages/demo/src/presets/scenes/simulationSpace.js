@@ -94,7 +94,7 @@ export default function createSimulationSpace(scene) {
       const time = (performance.now() - startTime) / 1000;
       const x = Math.cos(time * 0.75) * RING_SIZE.x;
       const z = Math.sin(time * 0.75) * RING_SIZE.z;
-      const y = 3;
+      const y = particleSystem.position.y;
 
       particleSystem.position.set(x, y, z);
       marker.position.x = x;

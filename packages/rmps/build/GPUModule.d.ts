@@ -6,14 +6,15 @@ export interface ModuleOptions {
     priority: number;
     tags: StrictMultiple<Tag>;
 }
-export default class Module {
+declare class Module {
     _modify: ((particle: Particle, deltaTime: number) => void);
     dependents: Module[];
     tags?: Tag[];
     priority: number;
     constructor(_modify: ((particle: Particle, deltaTime: number) => void), options?: Partial<ModuleOptions>);
-    modify(particles: Particle[], deltaTime: number): void;
+    modify(particle: Particle, deltaTime: number): void;
     withDependents(): Module[];
     prepare(particleSystem: ParticleSystem, deltaTime: number): void;
     cleanup(): void;
 }
+export default Module;

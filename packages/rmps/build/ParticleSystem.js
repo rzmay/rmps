@@ -99,28 +99,47 @@ class ParticleSystem extends THREE.Object3D {
         this.modules
             .flatMap((module) => module.withDependents())
             .forEach((module) => module.prepare(this, this.deltaTime));
-        this.particles.forEach((particle, index) => {
-            this.modules
-                .flatMap((module) => module.withDependents())
-                .filter((module) => module.priority < 0)
-                .forEach((module) => module.modify(particle, this.deltaTime));
-            particle.velocity.addScaledVector(this.gravity, this.deltaTime * evaluateDynamicNumber(this.gravityModifier, particle.time, particle.id));
-            particle.update(this.deltaTime);
-            this.modules
-                .flatMap((module) => module.withDependents())
-                .filter((module) => module.priority >= 0)
-                .sort((a, b) => a.priority - b.priority)
-                .forEach((module) => module.modify(particle, this.deltaTime));
-            if (Date.now() - particle.startTime > particle.lifetime * 1000) {
-                this._notifyDeath(particle);
-                this.particles.splice(index, 1);
-                this.subSystems.forEach((_options, subSystem) => {
-                    subSystem.emitters.forEach((emitter) => emitter.clearContext(particle.id));
-                });
-            }
-        });
+        // Run pre modules
+        this.modules
+            .flatMap((module) => module.withDependents())
+            .filter((module) => module.priority < 0)
+            .forEach((module) => module.modify(this.particles, this.deltaTime));
+        // Update particles
+        this._updateParticles();
+        // Run post modules
+        this.modules
+            .flatMap((module) => module.withDependents())
+            .filter((module) => module.priority >= 0)
+            .sort((a, b) => a.priority - b.priority)
+            .forEach((module) => module.modify(this.particles, this.deltaTime));
         this.renderers.forEach((renderer) => {
             renderer.update(this.particles, this);
+        });
+    }
+    _updateParticles() {
+        // Iterate over a copy of particles so that we can safely splice particles on death inside the loop
+        [...this.particles].forEach((p, index) => {
+            // Apply gravity
+            p.velocity.addScaledVector(this.gravity, this.deltaTime * evaluateDynamicNumber(this.gravityModifier, p.time, p.id));
+            // Update time
+            p.realtime = (Date.now() - p.startTime) / 1000;
+            p.time = p.realtime / p.lifetime;
+            // Update transform
+            p.position.addScaledVector(p.velocity, this.deltaTime * p.speed);
+            p.rotation.addScaledVector(p.angularVelocity, this.deltaTime * p.speed);
+            p.scale.addScaledVector(p.scalarVelocity, this.deltaTime * p.speed);
+            // Update velocities
+            p.velocity.addScaledVector(p.acceleration, this.deltaTime * p.speed);
+            p.angularVelocity.addScaledVector(p.angularAcceleration, this.deltaTime * p.speed);
+            p.scalarVelocity.addScaledVector(p.scalarAcceleration, this.deltaTime * p.speed);
+            // Kill old particles
+            if (Date.now() - p.startTime > p.lifetime * 1000) {
+                this._notifyDeath(p);
+                this.particles.splice(index, 1);
+                this.subSystems.forEach((_options, subSystem) => {
+                    subSystem.emitters.forEach((emitter) => emitter.clearContext(p.id));
+                });
+            }
         });
     }
     _updateSubSystems() {
