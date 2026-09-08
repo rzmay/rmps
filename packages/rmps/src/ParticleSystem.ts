@@ -713,7 +713,9 @@ class ParticleSystem extends THREE.Object3D {
       return;
     }
 
-    if (this._elapsedTime >= this.duration) {
+    // Importantly, this isn't allowed to "end" if it has a parent
+    // If the parent is alive, this must stay alive
+    if (this._elapsedTime >= this.duration && !this.isSubSystem) {
       this._elapsedTime = this.duration;
       this._playing = false;
       this._ended = true;

@@ -73,6 +73,7 @@ export default async function createTags() {
           sphericalNormals: true,
           normalLighting: 1,
         },
+        castShadow: true,
       }),
       new MeshRenderer({
         tags: 'cubes',

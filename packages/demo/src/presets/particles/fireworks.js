@@ -132,7 +132,7 @@ export default async function createFireworks() {
   smoke.name = 'Rocket Smoke';
 
   const sparkles = new ParticleSystem({
-    duration: 0.12,
+    duration: 5,
     looping: false,
     gravityModifier: 0.18,
     emitters: [
