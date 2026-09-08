@@ -901,13 +901,12 @@ needs named options, cached state, dependent modules, setup work, or cleanup.
 
 ```ts
 import * as THREE from "three";
-import { Module, ParticleSystem } from "rmps";
+import { Module, ModuleOptions, ParticleSystem } from "rmps";
 
-type GustModuleOptions = {
+interface GustModuleOptions extends Partial<ModuleOptions> {
   strength?: number;
   direction?: THREE.Vector3;
-  tags?: string | string[];
-};
+}
 
 class GustModule extends Module {
   strength: number;
@@ -923,9 +922,7 @@ class GustModule extends Module {
         this.direction,
         this.strength * pulse * deltaTime,
       );
-    }, {
-      tags: options.tags,
-    });
+    }, options);
 
     this.strength = options.strength ?? 1;
     this.direction = options.direction ?? new THREE.Vector3(1, 0, 0);

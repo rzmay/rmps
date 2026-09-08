@@ -17,7 +17,7 @@ export { default as TrailRenderer } from './renderers/TrailRenderer';
 export { TrailMode } from './enums/TrailMode';
 export { TrailTextureMode } from './enums/TrailTextureMode';
 
-export { default as Module } from './Module';
+export { default as Module, ModuleOptions } from './Module';
 export { default as NoiseModule } from './modules/NoiseModule';
 export { default as VelocityOverLifetime } from './modules/VelocityOverLifetime';
 export { default as ForceOverLifetime } from './modules/ForceOverLifetime';
