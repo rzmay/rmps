@@ -1,5 +1,5 @@
 {
-  "extends": ["airbnb", "plugin:@typescript-eslint/recommended"],
+  "extends": ["plugin:@typescript-eslint/recommended"],
   "plugins": ["@typescript-eslint"],
   "parser": "@typescript-eslint/parser",
   "rules": {
@@ -12,6 +12,8 @@
     "no-param-reassign": ["error", { "props": false }],
     "@typescript-eslint/no-extra-semi": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-inferrable-types": "off",
+    "@typescript-eslint/no-empty-function": "off",
     "max-len": [
       "warn",
       {

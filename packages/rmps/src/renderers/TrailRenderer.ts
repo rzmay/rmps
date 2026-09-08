@@ -1,20 +1,16 @@
 import * as THREE from 'three';
-
+import seedrandom from 'seedrandom';
 import { Renderer, RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
-
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import evaluateDynamicColor from '../helpers/evaluateDynamicColor';
-import seedrandom from 'seedrandom';
-
 
 export enum TrailMode {
   Particle,
   Ribbon,
 };
-
 
 export enum TrailTextureMode {
   Stretch,
@@ -22,7 +18,6 @@ export enum TrailTextureMode {
   RepeatPerSegment,
   DistributePerSegment,
 };
-
 
 export interface TrailRendererOptions extends RendererOptions {
   mode: TrailMode;
@@ -51,13 +46,11 @@ export interface TrailRendererOptions extends RendererOptions {
   receiveShadow: boolean;
 }
 
-
 type TrailPoint = {
   position: THREE.Vector3;
   createdAt: number;
   expiresAt: number;
 }
-
 
 type ParticleTrail = {
   particleId: string;
@@ -71,7 +64,6 @@ type ParticleTrail = {
   particleSize: number;
 }
 
-
 type RenderPoint = {
   position: THREE.Vector3;
   particleTime: number;
@@ -80,7 +72,6 @@ type RenderPoint = {
   particleSize: number;
   particleId: string;
 }
-
 
 class TrailRenderer extends Renderer {
   mode: TrailMode = TrailMode.Particle;
@@ -113,16 +104,15 @@ class TrailRenderer extends Renderer {
   colorOverTrail: DynamicValue<THREE.Color> =
     new THREE.Color(0xffffff);
 
-
   geometry: THREE.BufferGeometry;
 
   material: THREE.Material | THREE.Material[];
 
   mesh: THREE.Mesh;
 
-  castShadow: boolean = false;
+  castShadow = false;
 
-  receiveShadow: boolean = false;
+  receiveShadow = false;
 
   private particles: Particle[] = [];
 
@@ -171,7 +161,7 @@ class TrailRenderer extends Renderer {
     );
 
     // Add user data to the mesh so we can recognize it elsewhere
-    this.mesh.userData["__rmps_trailRenderer"] = true;
+    this.mesh.userData.__rmps_trailRenderer = true;
 
     this.mesh.frustumCulled = false;
   }
@@ -197,7 +187,6 @@ class TrailRenderer extends Renderer {
     }
   }
 
-
   destroy(): void {
     this.geometry.dispose();
 
@@ -205,7 +194,6 @@ class TrailRenderer extends Renderer {
 
     this.mesh.removeFromParent();
   }
-
 
   private updateParticleTrails(particles: Particle[]): void {
     const now = Date.now() / 1000;
@@ -286,7 +274,6 @@ class TrailRenderer extends Renderer {
     }
   }
 
-
   private addTrailPoint(trail: ParticleTrail, particle: Particle, now: number): void {
     let vertexLifetime = particle.lifetime * evaluateDynamicNumber(
       this.lifetime,
@@ -299,7 +286,6 @@ class TrailRenderer extends Renderer {
         particle,
       );
     }
-
 
     trail.points.push({
       position: particle.position.clone(),
@@ -369,24 +355,23 @@ class TrailRenderer extends Renderer {
 
     // Ordering based on age
     const particles = this.particles
-        .filter((particle) => this.particleHasTrail(particle.id,))
-        .sort((a, b) => a.startTime - b.startTime);
+      .filter((particle) => this.particleHasTrail(particle.id))
+      .sort((a, b) => a.startTime - b.startTime);
 
     const ribbons: RenderPoint[][] = Array.from({ length: ribbonCount }, () => []);
 
     particles.forEach((particle, index) => {
-        const ribbonIndex = index % ribbonCount;
+      const ribbonIndex = index % ribbonCount;
 
-        ribbons[ribbonIndex].push({
-          position: particle.position,
-          particleTime: particle.time,
-          particleColor: particle.color,
-          particleAlpha: particle.alpha,
-          particleSize: this.getParticleSize(particle),
-          particleId: particle.id,
-        });
-      },
-    );
+      ribbons[ribbonIndex].push({
+        position: particle.position,
+        particleTime: particle.time,
+        particleColor: particle.color,
+        particleAlpha: particle.alpha,
+        particleSize: this.getParticleSize(particle),
+        particleId: particle.id,
+      });
+    });
 
     return ribbons.filter((ribbon) => ribbon.length >= 2);
   }
@@ -531,19 +516,18 @@ class TrailRenderer extends Renderer {
         point.particleId,
       );
 
-
       if (this.sizeAffectsWidth) {
         width *= point.particleSize;
       }
 
       const halfWidth = width * 0.5;
       const left = point.position
-          .clone()
-          .addScaledVector(side, -halfWidth);
+        .clone()
+        .addScaledVector(side, -halfWidth);
 
       const right = point.position
-          .clone()
-          .addScaledVector(side, halfWidth);
+        .clone()
+        .addScaledVector(side, halfWidth);
 
       positions.push(
         left.x,
@@ -642,12 +626,11 @@ class TrailRenderer extends Renderer {
       );
     }
 
-
     /*
      * Duplicate trail positions can otherwise give us an
      * unusable zero-length tangent.
      */
-    if (tangent.lengthSq()< 0.000001) {
+    if (tangent.lengthSq() < 0.000001) {
       if (index > 0) {
         tangent.subVectors(
           path[index].position,
@@ -663,14 +646,12 @@ class TrailRenderer extends Renderer {
       }
     }
 
-
     if (tangent.lengthSq() < 0.000001) {
       tangent.set(1, 0, 0);
     }
 
     return tangent.normalize();
   }
-
 
   private getPerpendicular(tangent: THREE.Vector3): THREE.Vector3 {
     const reference = Math.abs(tangent.z) < 0.9
@@ -729,7 +710,6 @@ class TrailRenderer extends Renderer {
     const random = seedrandom(id).quick();
     return random < ratio;
   }
-
 
   private preprocessMaterial(material: THREE.Material | THREE.Material[]): void {
     if (Array.isArray(material)) {

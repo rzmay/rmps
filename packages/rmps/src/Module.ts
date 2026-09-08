@@ -19,7 +19,7 @@ export default class Module {
 
   tags?: Tag[];
 
-  priority: number = -1;
+  priority = -1;
 
   constructor(
     public _modify: ((particle: Particle, deltaTime: number) => void),
