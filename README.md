@@ -107,23 +107,34 @@ type DynamicValue<T> =
   | [DynamicValue<T>, DynamicValue<T>]
   | Set<DynamicValue<T>>;
 
+// Used for parameters that can take multiple elements or just one
 type Multiple<T> = T | T[];
+
+// Multiple with least one value
 type StrictMultiple<T> = T | [T, ...[T]];
+
+// In RMPS, tags are natively strings
 type Tag = string;
 ```
 
 The `t` argument is normalized particle lifetime, from `0` to `1`.
 
-| Form           | Example                       | Behavior                                 |
-| -------------- | ----------------------------- | ---------------------------------------- |
-| Static value   | `2`                           | Always returns the same value.           |
-| Function       | `(t) => 1 - t`                | Re-evaluates over normalized lifetime.   |
-| Two-item array | `[0.5, 2]`                    | Seeded random value between min and max. |
-| Set            | `new Set(["spark", "smoke"])` | Seeded random choice.                    |
+| Form           | Example                       | Behavior                               |
+| -------------- | ----------------------------- | -------------------------------------- |
+| Static value   | `2`                           | Always returns the same value.         |
+| Function       | `(t) => 1 - t`                | Re-evaluates over normalized lifetime. |
+| Two-item array | `[0.5, 2]`                    | Random value between min and max.      |
+| Set            | `new Set(["spark", "smoke"])` | Random choice.                         |
 
 Dynamic values are supported for numbers, vectors, and colors where the option
 type uses `DynamicValue<number>`, `DynamicValue<THREE.Vector3>`, or
 `DynamicValue<THREE.Color>`.
+
+The [curves](https://www.npmjs.com/package/curves) package was designed and
+built to streamline functional values by defining and evaluating eased curves,
+similar to Unity's AnimationCurves with modifiers akin to Blender's FCurve
+Modifiers. It has prebuilt keyframe types for numbers, colors, and vectors,
+compatible with the `THREE.Vector3` and `THREE.Color` types.
 
 ### Tags
 
@@ -849,7 +860,48 @@ Use `ParticleForceFieldHelper` to visualize a field while tuning.
 ## Collision And Physics
 
 The base package includes `ThreeCollisionBackend`, which raycasts against a
-Three.js scene. For external physics engines, use the extension packages:
+Three.js scene.
+
+```ts
+interface ThreeCollisionBackendOptions {
+  world?: THREE.Object3D;
+  staticObjects?: THREE.Object3D[];
+  dynamicObjects?: THREE.Object3D[];
+
+  // How long must an object remain still to be considered static?
+  // Defaults to 2 seconds.
+  staticAfter?: number;
+
+  // How frequently is the dynamic octree rebuilt?
+  // Defaults to 1 => once per update.
+  timeQuality?: number;
+
+  // How frequently is the scene scanned for new objects?
+  // Defaults to 1 => once per update.
+  refreshQuality?: number;
+
+  objectFilter?: (object: THREE.Object3D) => boolean;
+  staticObjectFilter?: (object: THREE.Object3D) => boolean;
+  dynamicObjectFilter?: (object: THREE.Object3D) => boolean;
+}
+```
+
+The `ThreeCollisionBackend` uses two octrees for static and dynamic collisions.
+Sorting objects into static and dynamic can be done automatically, or with
+supporting identifiers passed into the constructor options. Explicitly stated
+`staticObjects` and `dynamicObjects` lists are treated as the source of truth if
+present.
+
+If explicit lists are not provided, the scene is traversed and the
+`staticObjectFilter`, `dynamicObjectFilter`, and `objectFilter` predicates are
+used to select objects. `objectFilter` selects whether objects are included at
+all but does not decide what is considered static or dynamic.
+
+If none of these predicates are provided, the octrees are automatically
+constructed from the scene traversal, with distinctions between static and
+dynamic objects being made based on movement in the scene.
+
+For external physics engines, use the extension packages:
 
 | Package        | Engine       | npm                                                                          |
 | -------------- | ------------ | ---------------------------------------------------------------------------- |
