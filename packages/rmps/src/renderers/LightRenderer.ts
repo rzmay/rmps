@@ -55,22 +55,19 @@ class LightRenderer extends Renderer {
 
     private _count = 0;
 
-    get count(): number
-    {
-        return this._count;
+    get count(): number {
+      return this._count;
     }
 
-    set count(value: number)
-    {
-        const next = Number.isFinite(value)
-            ? Math.max(0, Math.floor(value))
-            : 0;
+    set count(value: number) {
+      const next = Number.isFinite(value)
+        ? Math.max(0, Math.floor(value))
+        : 0;
 
-        if (next === this._count)
-            return;
+      if (next === this._count) return;
 
-        this._count = next;
-        this._syncLightCount();
+      this._count = next;
+      this._syncLightCount();
     }
 
     constructor(options: Partial<LightRendererOptions> = {}) {
@@ -217,30 +214,25 @@ class LightRenderer extends Renderer {
       return this.groupingRadiusRatio * range;
     }
 
-    private _syncLightCount(): void
-    {
-        while (this.lights.length < this._count)
-        {
-            const light = this._createLight();
+    private _syncLightCount(): void {
+      while (this.lights.length < this._count) {
+        const light = this._createLight();
 
-            this.lights.push(light);
-            this.lightContainer.add(light);
-        }
+        this.lights.push(light);
+        this.lightContainer.add(light);
+      }
 
-        if (this.lights.length > this._count)
-        {
-            const removed = this.lights.splice(this._count);
+      if (this.lights.length > this._count) {
+        const removed = this.lights.splice(this._count);
 
-            removed.forEach((light) =>
-            {
-                light.removeFromParent();
-            });
-        }
+        removed.forEach((light) => {
+          light.removeFromParent();
+        });
+      }
     }
 
-    destroy(): void
-    {
-        this.lightContainer.removeFromParent();
+    destroy(): void {
+      this.lightContainer.removeFromParent();
     }
 }
 

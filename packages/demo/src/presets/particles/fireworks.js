@@ -176,12 +176,12 @@ export default async function createFireworks() {
         },
       }),
       new LightRenderer({
-        count: 1,
-        ratio: 0.1,
+        count: 10,
+        ratio: 0.5,
         inheritParticleColor: true,
         sizeAffectsRange: false,
         alphaAffectsIntensity: true,
-        brightness: 2.5,
+        brightness: 50,
         rangeMultiplier: 5,
         lightOptions: {
           intensity: 1,
