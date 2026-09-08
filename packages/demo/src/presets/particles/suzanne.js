@@ -31,6 +31,8 @@ export default async function createSuzanne() {
   }
 
   const suzanne = new ParticleSystem({
+    duration: 10,
+    looping: true,
     emitters: [
       new Emitter({
         source: new EmissionShape({
@@ -38,8 +40,6 @@ export default async function createSuzanne() {
           source: EmissionSource.Surface
         }),
         rate: 256,
-        duration: 10,
-        looping: true,
         radialSpeed: 1.1,
         initialValues: {
           lifetime: 2.2,

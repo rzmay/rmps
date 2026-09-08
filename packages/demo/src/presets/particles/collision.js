@@ -10,6 +10,8 @@ import circleSprite from 'url:../../assets/images/circle.png';
 
 export default async function createCollision() {
   const collision = new ParticleSystem({
+    duration: 5,
+    looping: true,
     gravityModifier: 1,
     emitters: [
       new Emitter({
@@ -17,8 +19,6 @@ export default async function createCollision() {
           geometry: new THREE.SphereGeometry(0.25, 16, 12),
         }),
         rate: 30,
-        duration: 5,
-        looping: true,
         radialSpeed: [1, 5],
         initialValues: {
           lifetime: 8,

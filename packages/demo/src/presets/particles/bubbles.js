@@ -32,6 +32,8 @@ export default async function createBubbles() {
   ]);
 
   const system = new ParticleSystem({
+    duration: 10,
+    looping: true,
     gravityModifier: 0.05,
 
     emitters: [
@@ -41,8 +43,6 @@ export default async function createBubbles() {
         }),
 
         rate: 8,
-        duration: 10,
-        looping: true,
 
         radialSpeed: [1, 3],
 

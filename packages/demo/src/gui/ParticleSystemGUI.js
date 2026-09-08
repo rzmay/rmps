@@ -24,6 +24,7 @@ import {
     TrailMode,
     TrailTextureMode,
     Collision,
+    EndBehavior,
 } from 'rmps';
 
 const INITIAL_VALUE_DEFAULTS = {
@@ -63,6 +64,9 @@ const DEFAULT_RENDERER_FACTORIES = {
     Light: () => new LightRenderer(),
     Trail: () => new TrailRenderer(),
 };
+const END_BEHAVIOR_OPTIONS = Object.fromEntries(
+    Object.entries(EndBehavior).filter(([key, value]) => Number.isNaN(Number(key)) && typeof value === 'number')
+);
 export class ParticleSystemGUI {
     constructor(options) {
         this.presetLoadVersion = 0;
@@ -78,6 +82,11 @@ export class ParticleSystemGUI {
         this.onCodeChange = options.onCodeChange;
         this.currentPresetName = options.initialPreset;
         this.currentSceneName = options.initialScene;
+        this.handleSystemDestroyed = () => {
+            this.rebuild();
+            this.emitCode();
+        };
+        this.system.addEventListener?.('destroyed', this.handleSystemDestroyed);
         this.gui = new GUI({
             title: options.title ?? 'Particle System',
             width: options.width ?? 360,
@@ -98,11 +107,14 @@ export class ParticleSystemGUI {
             return;
         this.currentPresetName = presetName;
         const previous = this.system;
-        if (this.scene && previous.parent === this.scene) {
-            this.scene.remove(previous);
+        previous.removeEventListener?.('destroyed', this.handleSystemDestroyed);
+        if (this.scene) {
+            if (previous.parent === this.scene)
+                this.scene.remove(previous);
             this.scene.add(next);
         }
         this.system = next;
+        this.system.addEventListener?.('destroyed', this.handleSystemDestroyed);
         this.onSystemChange?.(next, previous);
         this.rebuild();
         this.emitCode();
@@ -116,6 +128,7 @@ export class ParticleSystemGUI {
     }
     destroy() {
         this.sceneCleanup?.();
+        this.system.removeEventListener?.('destroyed', this.handleSystemDestroyed);
         this.gui.destroy();
     }
     rebuild() {
@@ -124,10 +137,27 @@ export class ParticleSystemGUI {
         this.contentFolder.open();
         this.buildDemoSelectors(this.contentFolder);
         this.buildSystemFolder(this.contentFolder, this.system);
+        if (this.isSystemDestroyed(this.system))
+            return;
         this.buildEmittersFolder(this.contentFolder, this.system);
         this.buildSubSystemsFolder(this.contentFolder, this.system);
         this.buildModulesFolder(this.contentFolder, this.system);
         this.buildRenderersFolder(this.contentFolder, this.system);
+    }
+    isSystemDestroyed(system) {
+        return !!system.destroyed;
+    }
+    disableFolder(folder) {
+        folder.controllersRecursive().forEach((controller) => controller.disable?.());
+    }
+    async respawnSystem() {
+        if (!this.currentPresetName || !this.presets[this.currentPresetName])
+            return;
+        const version = ++this.presetLoadVersion;
+        const next = await this.presets[this.currentPresetName]();
+        if (version !== this.presetLoadVersion)
+            return;
+        this.setSystem(next, this.currentPresetName);
     }
     buildDemoSelectors(root) {
         if (Object.keys(this.presets).length === 0 && Object.keys(this.scenes).length === 0)
@@ -175,9 +205,13 @@ export class ParticleSystemGUI {
     buildSystemFolder(root, system = this.system) {
         const folder = root.addFolder('System');
         folder.domElement.classList.add('psgui-system');
+        const destroyed = this.isSystemDestroyed(system);
         folder.add(system, 'simulationSpace', ['local', 'world']).name('Simulation Space');
         this.addVector3(folder, system.gravity, 'Gravity');
         this.addDynamicValue(folder, system, 'gravityModifier', 'Gravity Modifier');
+        folder.add(system, 'duration', 0.01).name('Duration');
+        folder.add(system, 'looping').name('Looping');
+        folder.add(system, 'endBehavior', END_BEHAVIOR_OPTIONS).name('End Behavior');
         const actions = {
             start: () => system.start(),
             pause: () => system.pause(),
@@ -188,6 +222,7 @@ export class ParticleSystemGUI {
             stop: () => system.stop(false),
             stopAndClear: () => system.stop(true),
             clearParticles: () => system.clearParticles(),
+            respawn: () => void this.respawnSystem(),
         };
         folder.add(actions, 'start').name('Start / Restart');
         folder.add(actions, 'pause').name('Pause');
@@ -195,6 +230,12 @@ export class ParticleSystemGUI {
         folder.add(actions, 'stop').name('Stop');
         folder.add(actions, 'stopAndClear').name('Stop + Clear');
         folder.add(actions, 'clearParticles').name('Clear Particles');
+        if (destroyed) {
+            this.disableFolder(folder);
+            const respawn = folder.add(actions, 'respawn').name('Respawn');
+            if (!this.currentPresetName || !this.presets[this.currentPresetName])
+                respawn.disable?.();
+        }
     }
     buildEmittersFolder(root, system = this.system) {
         const section = root.addFolder(`Emitters (${system.emitters.length})`);
@@ -217,8 +258,6 @@ export class ParticleSystemGUI {
         this.addDynamicValue(folder, emitter, 'rate', 'Rate');
         this.addDynamicValue(folder, emitter, 'radialSpeed', 'Radial Speed');
         this.addDynamicValue(folder, emitter, 'alignment', 'Alignment');
-        folder.add(emitter, 'duration', 0.01).name('Duration');
-        folder.add(emitter, 'looping').name('Looping');
         this.addTags(folder, emitter);
         folder.add(emitter, 'tagSelection', ['all', 'random', 'distribute']).name('Tag Selection');
         this.buildEmissionShape(folder.addFolder('Emission Shape'), emitter);
@@ -943,7 +982,7 @@ export class ParticleSystemGUI {
         this.onCodeChange?.(this.generateCode());
     }
     serializeParticleSystem() {
-        const imports = new Set(['ParticleSystem', 'Emitter', 'EmissionShape', 'EmissionSource']);
+        const imports = new Set(['EndBehavior', 'ParticleSystem', 'Emitter', 'EmissionShape', 'EmissionSource']);
         this.collectImports(this.system, imports);
 
         const lines = [
@@ -988,6 +1027,9 @@ export class ParticleSystemGUI {
             `  gravity: ${this.serializeValue(system.gravity)},`,
             `  gravityModifier: ${this.serializeValue(system.gravityModifier)},`,
             `  simulationSpace: ${JSON.stringify(system.simulationSpace)},`,
+            `  duration: ${this.serializeValue(system.duration)},`,
+            `  looping: ${this.serializeValue(system.looping)},`,
+            `  endBehavior: ${this.serializeEndBehavior(system.endBehavior)},`,
             '  emitters: [',
             this.indent(emitters, 4),
             '  ],',
@@ -1006,6 +1048,9 @@ export class ParticleSystemGUI {
         }
 
         return lines;
+    }
+    serializeEndBehavior(value) {
+        return `EndBehavior.${EndBehavior[value] ?? 'Nothing'}`;
     }
 
     serializeSubSystemOptions(options) {
@@ -1033,8 +1078,6 @@ export class ParticleSystemGUI {
             `  rate: ${this.serializeValue(emitter.rate)},`,
             `  radialSpeed: ${this.serializeValue(emitter.radialSpeed)},`,
             `  alignment: ${this.serializeValue(emitter.alignment)},`,
-            `  duration: ${this.serializeValue(emitter.duration)},`,
-            `  looping: ${this.serializeValue(emitter.looping)},`,
             `  tags: ${this.serializeValue(emitter.tags)},`,
             `  tagSelection: ${this.serializeValue(emitter.tagSelection)},`,
             `  bursts: ${bursts},`,

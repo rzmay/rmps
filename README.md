@@ -159,11 +159,34 @@ interface ParticleSystemOptions {
   emitters: Multiple<Emitter>;
   renderers: Multiple<Renderer>;
   modules: Multiple<Module>;
+  duration: number;
+  looping: boolean;
+  endBehavior: EndBehavior;
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
   simulationSpace: "local" | "world";
 }
 ```
+
+`duration` and `looping` control the particle system's emission timeline.
+Emitters use normalized system time for rate curves and bursts.
+
+For non-looping systems, `endBehavior` controls what happens after the system
+duration has elapsed.
+
+```ts
+enum EndBehavior {
+  Nothing,
+  Destroy,
+  DestroyImmediate,
+}
+```
+
+| Value              | Behavior                                                              |
+| ------------------ | --------------------------------------------------------------------- |
+| `Nothing`          | Stops emission and keeps the system in the scene.                     |
+| `Destroy`          | Stops emission, lets live particles finish, then destroys the system. |
+| `DestroyImmediate` | Destroys the system as soon as its duration elapses.                  |
 
 ### Simulation Space
 
@@ -186,6 +209,7 @@ Subsystems inherit the parent system's simulation space.
 | `pause()`                       | Pauses emission and simulation.                              |
 | `resume()`                      | Resumes from pause.                                          |
 | `stop(clearParticles)`          | Stops emission; optionally clears existing particles.        |
+| `destroy()`                     | Stops, clears, destroys renderers, and removes the system.   |
 | `clearParticles()`              | Removes all live particles.                                  |
 | `addEmitter(emitter)`           | Adds and sets up an emitter.                                 |
 | `addModule(module)`             | Adds a module.                                               |
@@ -270,14 +294,15 @@ interface EmitterOptions {
   source: EmissionShape;
   bursts: SpawnBurst | SpawnBurst[];
   rate: DynamicValue<number>;
-  duration: number;
-  looping: boolean;
   radialSpeed: DynamicValue<number>;
   alignment: DynamicValue<number>;
   tags: StrictMultiple<Tag>;
   tagSelection: "all" | "random" | "distribute";
 }
 ```
+
+Emitter `rate` curves and burst `time` values are evaluated against the owning
+particle system's normalized timeline.
 
 ### Initial Particle Values
 

@@ -79,6 +79,7 @@ class Particle {
   tags?: Tag[];
 
   // Used to store custom data for special components
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
 
   constructor(options: Partial<ParticleOptions> = {}) {

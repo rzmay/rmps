@@ -24,8 +24,6 @@ interface EmitterOptions {
     source: EmissionShape;
     bursts: Multiple<SpawnBurst>;
     rate: DynamicValue<number>;
-    duration: number;
-    looping: boolean;
 
     radialSpeed: DynamicValue<number>;
     alignment: DynamicValue<number>;
@@ -45,6 +43,8 @@ export interface EmissionContext {
   transform?: THREE.Matrix4;
   time?: number;
   duration?: number;
+  elapsedTime?: number;
+  looping?: boolean;
   color?: THREE.Color;
   alpha?: number;
   mass?: number;
@@ -54,8 +54,6 @@ export interface EmissionContext {
 class Emitter {
   source: EmissionShape;
   rate: DynamicValue<number>;
-  duration: number;
-  looping: boolean;
 
   bursts: SpawnBurst[];
   initialValues: Partial<InitialParticleValues>;
@@ -65,13 +63,7 @@ class Emitter {
   tags?: Tag[];
   tagSelection: TagSelectionMethod = 'all';
 
-  private _lastSpawn: number;
-  private _startTime: number;
-
   private _lastTagIndex: number = 0;
-
-  private _pausedAt?: number;
-  private _stopped = false;
 
   // Used for subsystems
   private _contextStates = new Map<string, EmitterContextState>();
@@ -83,8 +75,6 @@ class Emitter {
     this.initialValues = options.initialValues ?? {};
     this.rate = options.rate ?? 50;
     this.bursts = acceptMultiple(options.bursts) ?? [];
-    this.duration = options.duration ?? 10;
-    this.looping = options.looping ?? true;
 
     this.radialSpeed = options.radialSpeed ?? 1
     this.alignment = options.alignment ?? 0;
@@ -92,68 +82,18 @@ class Emitter {
     this.tags = acceptMultiple(options.tags);
     this.tagSelection = options.tagSelection ?? this.tagSelection;
 
-    this._lastSpawn = Date.now();
-    this._startTime = Date.now();
-
-    document.addEventListener('visibilitychange', () => {
-      const now = Date.now();
-      const time = ((now - this._startTime) / (this.duration * 1000));
-      if (now - this._lastSpawn > evaluateDynamicNumber(this.rate, time)) {
-        this._lastSpawn = Date.now() - evaluateDynamicNumber(this.initialValues.lifetime, time) * 1000;
-      }
-    });
   }
 
   /*
     * CONTROLS
   */
 
-  public start(): void {
-    const now = Date.now();
-
-    this._stopped = false;
-    this._pausedAt = undefined;
-    this._startTime = now;
-    this._lastSpawn = now;
-
+  public reset(): void {
     this.bursts.forEach((burst) => {
       burst.fired = false;
     });
 
     this._contextStates.clear();
-  }
-
-  public pause(): void {
-    if (this._pausedAt !== undefined) return;
-
-    this._pausedAt = Date.now();
-  }
-
-  public resume(): void {
-    if (this._pausedAt === undefined) return;
-
-    const now = Date.now();
-    const pausedDuration = now - this._pausedAt;
-
-    this._startTime += pausedDuration;
-    this._lastSpawn += pausedDuration;
-
-    this._contextStates.forEach((state) => {
-      state.startTime += pausedDuration;
-      state.lastSpawn += pausedDuration;
-    });
-
-    this._pausedAt = undefined;
-  }
-
-  public stop(): void {
-    this._stopped = true;
-    this._pausedAt = undefined;
-    this._contextStates.clear();
-
-    this.bursts.forEach((burst) => {
-      burst.fired = false;
-    });
   }
 
   /*
@@ -165,54 +105,26 @@ class Emitter {
   }
 
   update(particles: Particle[], context?: EmissionContext): Particle[] {
-    const now = Date.now();
-    const time = ((now - this._startTime) / (this.duration * 1000));
-    const spawned = [];
-
-    // Spawning
-    if (now - this._startTime < this.duration * 1000) {
-      // Rate
-      const timeSinceLast = now - this._lastSpawn;
-      const secondsPerParticle = (1000 / evaluateDynamicNumber(this.rate, time));
-      const particlesDue = Math.floor(timeSinceLast / secondsPerParticle);
-      for (let i = 0; i < particlesDue; i += 1) {
-        const particle = this.spawnParticle(particles, time, context);
-        spawned.push(particle);
-        this._lastSpawn = now;
-      }
-
-      // Bursts
-      this.bursts.forEach((burst) => {
-        if (!burst.fired && burst.time * this.duration * 1000 < now - this._startTime) {
-          const count = evaluateDynamicNumber(burst.count)
-          for (let j = 0; j < Math.floor(count); j += 1) {
-            const particle = this.spawnParticle(particles, time, context);
-            spawned.push(particle);
-          }
-
-          burst.fired = true;
-        }
-      });
-    } else if (this.looping) {
-      // Reset time
-      this._startTime = now;
-
-      // Reset bursts
-      this.bursts.forEach((burst) => { burst.fired = false; });
-    }
-
-    return spawned;
+    return this.updateAt(particles, {
+      ...context,
+      key: context?.key ?? '__default',
+    });
   }
 
   updateAt(particles: Particle[], context: EmissionContext): Particle[] {
     const now = Date.now();
-    const state = this.getContextState(context.key ?? '__default', now);
-    const duration = context.duration ?? this.duration;
-    const time = context.time ?? ((now - state.startTime) / (duration * 1000));
+    const elapsedMilliseconds = context.elapsedTime === undefined
+      ? undefined
+      : context.elapsedTime * 1000;
+    const state = this.getContextState(context.key ?? '__default', elapsedMilliseconds ?? now);
+    const duration = context.duration ?? 10;
+    const elapsedTime = context.elapsedTime ?? ((now - state.startTime) / 1000);
+    const time = context.time ?? (elapsedTime / duration);
+    const looping = context.looping ?? true;
     const spawned: Particle[] = [];
 
-    if (context.time === undefined && now - state.startTime >= duration * 1000) {
-      if (!this.looping) return spawned;
+    if (context.time === undefined && elapsedTime >= duration) {
+      if (!looping) return spawned;
 
       state.startTime = now;
       state.lastSpawn = now;
@@ -224,7 +136,8 @@ class Emitter {
     const rate = evaluateDynamicNumber(this.rate, time);
     if (rate > 0) {
       const secondsPerParticle = 1000 / rate;
-      const particlesDue = Math.floor((now - state.lastSpawn) / secondsPerParticle);
+      const spawnClock = elapsedMilliseconds ?? now;
+      const particlesDue = Math.floor((spawnClock - state.lastSpawn) / secondsPerParticle);
 
       for (let i = 0; i < particlesDue; i += 1) {
         const particle = this.spawnParticle(particles, time, context);
@@ -232,7 +145,9 @@ class Emitter {
         spawned.push(particle);
       }
 
-      if (particlesDue > 0) state.lastSpawn = now;
+      if (particlesDue > 0) {
+        state.lastSpawn = spawnClock;
+      }
     }
 
     this.bursts.forEach((burst, index) => {
@@ -253,12 +168,12 @@ class Emitter {
     this._contextStates.delete(key);
   }
 
-  private getContextState(key: string, now: number): EmitterContextState {
+  private getContextState(key: string, startTime: number): EmitterContextState {
     let state = this._contextStates.get(key);
     if (!state) {
       state = {
-        startTime: now,
-        lastSpawn: now,
+        startTime,
+        lastSpawn: startTime,
         firedBursts: new Set<number>(),
       };
       this._contextStates.set(key, state);

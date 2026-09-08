@@ -15,6 +15,8 @@ import { curvePresets } from '../curvePresets';
 
 export default async function createSnow() {
   const snow = new ParticleSystem({
+    duration: 10,
+    looping: true,
     gravityModifier: 0.025,
     emitters: [
       new Emitter({
@@ -22,8 +24,6 @@ export default async function createSnow() {
           geometry: new THREE.BoxGeometry(14, 0.1, 14),
         }),
         rate: 70,
-        duration: 10,
-        looping: true,
         radialSpeed: 0,
         initialValues: {
           lifetime: 8.5,

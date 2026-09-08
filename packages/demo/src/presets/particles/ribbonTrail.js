@@ -11,12 +11,12 @@ import { curvePresets } from '../curvePresets';
 
 export default async function createRibbonTrail() {
   const ribbonTrail = new ParticleSystem({
+    duration: 4,
+    looping: true,
     emitters: [
       new Emitter({
         source: EmissionShape.Torus(),
         rate: 50,
-        duration: 4,
-        looping: true,
         radialSpeed: 5,
         initialValues: {
           lifetime: 1,

@@ -44,6 +44,7 @@ export default class Module {
   }
 
   // Optional preparation hook called once-per-update rather than per particle
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public prepare(particleSystem: ParticleSystem, deltaTime: number)  {  }
 
   // Optional clean up hook for modules that require it

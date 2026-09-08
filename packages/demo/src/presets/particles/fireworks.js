@@ -38,12 +38,12 @@ export default async function createFireworks() {
   ]);
 
   const fireworks = new ParticleSystem({
+    duration: 2.6,
+    looping: true,
     emitters: [
       new Emitter({
         source: EmissionShape.Sphere(1),
         rate: 3,
-        duration: 2.6,
-        looping: true,
         initialValues: {
           lifetime: 2,
           velocity: new THREE.Vector3(0, 8.5, 0),
@@ -74,13 +74,13 @@ export default async function createFireworks() {
   });
 
   const smoke = new ParticleSystem({
+    duration: 10,
+    looping: true,
     gravityModifier: -0.015,
     emitters: [
       new Emitter({
         source: EmissionShape.Sphere(0.1),
         rate: 36,
-        duration: 10,
-        looping: true,
         radialSpeed: 0.18,
         initialValues: {
           lifetime: 4.5,
@@ -132,13 +132,13 @@ export default async function createFireworks() {
   smoke.name = 'Rocket Smoke';
 
   const sparkles = new ParticleSystem({
+    duration: 0.12,
+    looping: false,
     gravityModifier: 0.18,
     emitters: [
       new Emitter({
         source: EmissionShape.Sphere(0.08),
         rate: 0,
-        duration: 0.12,
-        looping: false,
         bursts: [{ time: 0, count: [100, 300] }],
         radialSpeed: [4.5, 12],
         initialValues: {

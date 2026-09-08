@@ -19,6 +19,8 @@ import { curvePresets } from '../curvePresets';
 
 export default async function createFire() {
   const fire = new ParticleSystem({
+    duration: 10,
+    looping: true,
     emitters: [
       new Emitter({
         source: new EmissionShape({
@@ -26,8 +28,6 @@ export default async function createFire() {
           source: EmissionSource.Surface,
         }),
         rate: 90,
-        duration: 10,
-        looping: true,
         radialSpeed: 0.2,
         initialValues: {
           lifetime: 1.35,

@@ -15,14 +15,14 @@ export default async function createSpheres() {
   ]);
 
   const system = new ParticleSystem({
+    duration: 10,
+    looping: true,
     gravity: new THREE.Vector3(0, 0, 0),
     gravityModifier: 0,
 
     emitters: [
       new Emitter({
         rate: 12,
-        duration: 10,
-        looping: true,
         radialSpeed: 1,
         initialValues: {
           lifetime: [6, 12],

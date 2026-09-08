@@ -13,14 +13,14 @@ import { curvePresets } from '../curvePresets';
 
 export default async function createFireball() {
   const fireball = new ParticleSystem({
+    duration: 1.25,
+    looping: true,
     emitters: [
       new Emitter({
         source: new EmissionShape({
           geometry: new THREE.SphereGeometry(0.2, 16, 12),
         }),
         rate: 0,
-        duration: 1.25,
-        looping: true,
         bursts: [{ time: 0, count: 5 }],
         initialValues: {
           lifetime: 0.7,

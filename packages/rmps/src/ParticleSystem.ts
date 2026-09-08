@@ -17,6 +17,9 @@ interface ParticleSystemOptions {
   emitters: Multiple<Emitter>;
   renderers: Multiple<Renderer>;
   modules: Multiple<Module>;
+  duration: number;
+  looping: boolean;
+  endBehavior: EndBehavior;
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
   simulationSpace: SimulationSpace;
@@ -47,6 +50,20 @@ interface SubSystemEmissionRun {
 export type ParticleListener = (particle: Particle) => void;
 export type SimulationSpace = 'local' | 'world';
 
+export enum EndBehavior {
+  Nothing,
+  Destroy,
+  DestroyImmediate,
+}
+
+type EmitterContext = {
+  transform?: THREE.Matrix4;
+  time?: number;
+  duration?: number;
+  elapsedTime?: number;
+  looping?: boolean;
+};
+
 class ParticleSystem extends THREE.Object3D {
   particles: Particle[] = [];
   emitters: Emitter[] = [];
@@ -56,6 +73,9 @@ class ParticleSystem extends THREE.Object3D {
 
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
+  duration: number;
+  looping: boolean;
+  endBehavior: EndBehavior;
 
   private _simulationSpace: SimulationSpace = 'local';
   get simulationSpace(): SimulationSpace {
@@ -96,6 +116,10 @@ class ParticleSystem extends THREE.Object3D {
 
   private _playing = true;
   private _paused = false;
+  private _elapsedTime = 0;
+  private _ended = false;
+  private _destroyed = false;
+  get destroyed(): boolean { return this._destroyed; }
 
   private readonly _rendererObjects = new Set<THREE.Object3D>();
   private readonly _worldRendererRoot = new THREE.Group();
@@ -106,6 +130,9 @@ class ParticleSystem extends THREE.Object3D {
     this.emitters = acceptMultiple(options.emitters ?? new Emitter()) ?? [];
     this.renderers = acceptMultiple(options.renderers ?? new SpriteRenderer()) ?? [];
     this.modules = acceptMultiple(options.modules) ?? [];
+    this.duration = options.duration ?? 10;
+    this.looping = options.looping ?? true;
+    this.endBehavior = options.endBehavior ?? EndBehavior.Nothing;
 
     // If gravity is passed in, gravityModifier will be set to 1.
     // In effect, this means gravity will be turned off by default,
@@ -143,6 +170,8 @@ class ParticleSystem extends THREE.Object3D {
   */
 
   update(): void {
+    if (this._destroyed) return;
+
     // Subsystems are owned and ticked by parent, avoid double update
     if (this._subSystemParent) return;
 
@@ -151,6 +180,8 @@ class ParticleSystem extends THREE.Object3D {
 
     this.syncRendererParents();
     this._calculateDeltaTime();
+
+    if (this._playing) this._updateSystemTime();
 
     if (this._playing) this.emitters.forEach((emitter) => {
       const particles = emitter.update(this.particles, this.getEmitterContext());
@@ -162,6 +193,7 @@ class ParticleSystem extends THREE.Object3D {
 
     // Subsystems
     this._updateSubSystems();
+    this._handleEndBehavior();
   }
 
   private _calculateDeltaTime() {
@@ -242,6 +274,7 @@ class ParticleSystem extends THREE.Object3D {
 
     this.syncRendererParents();
     this._calculateDeltaTime();
+    this._updateSystemTime();
 
     if (options.emitContinuous) {
       parentParticles
@@ -255,6 +288,7 @@ class ParticleSystem extends THREE.Object3D {
               transform,
               time: options.inheritLifetime ? particle.time : undefined,
               duration: options.inheritLifetime ? particle.lifetime : undefined,
+              looping: options.inheritLifetime ? false : this.looping,
               color: options.inheritColor ? particle.color : undefined,
               alpha: options.inheritAlpha ? particle.alpha : undefined,
               mass: options.inheritMass ? particle.mass : undefined,
@@ -280,7 +314,7 @@ class ParticleSystem extends THREE.Object3D {
       let finished = true;
 
       this.emitters.forEach((emitter) => {
-        const duration = run.duration ?? emitter.duration;
+        const duration = run.duration ?? this.duration;
 
         const elapsed = (now - run.startTime) / 1000;
         const startTime = 0;
@@ -295,6 +329,8 @@ class ParticleSystem extends THREE.Object3D {
             transform: run.transform,
             time,
             duration,
+            elapsedTime: elapsed,
+            looping: false,
             color: options.inheritColor ? run.particle.color : undefined,
           });
 
@@ -323,6 +359,11 @@ class ParticleSystem extends THREE.Object3D {
   ): void {
     const now = Date.now();
 
+    this._playing = true;
+    this._paused = false;
+    this._ended = false;
+    this.lastFrame = now;
+
     this._emissionRuns.push({
       id: `event_${this._nextEmissionRunId++}`,
       transform: this._particleEmissionTransform(particle),
@@ -332,7 +373,7 @@ class ParticleSystem extends THREE.Object3D {
       // of the subsystem emitter's configured duration.
       duration: options.inheritLifetime
         ? particle.lifetime
-        : undefined,
+        : this.duration,
 
       // Pass particle info -- clone so reference doesn't get destroyed
       particle: {
@@ -368,13 +409,15 @@ class ParticleSystem extends THREE.Object3D {
 
   // Start emitting
   public start(): void {
+    const now = Date.now();
+
     this._playing = true;
     this._paused = false;
-    this.lastFrame = Date.now();
+    this._ended = false;
+    this._elapsedTime = 0;
+    this.lastFrame = now;
 
-    this.emitters.forEach((emitter) => {
-      emitter.start();
-    });
+    this.emitters.forEach((emitter) => emitter.reset());
 
     this.subSystems.forEach((_options, subSystem) => {
       subSystem.start();
@@ -392,10 +435,6 @@ class ParticleSystem extends THREE.Object3D {
     if (!this._playing || this._paused) return;
     this._paused = true;
 
-    this.emitters.forEach((emitter) => {
-      emitter.pause();
-    });
-
     this.subSystems.forEach((_options, subSystem) => {
       subSystem.pause();
     });
@@ -407,10 +446,6 @@ class ParticleSystem extends THREE.Object3D {
     this._paused = false;
     this.lastFrame = Date.now();
 
-    this.emitters.forEach((emitter) => {
-      emitter.resume();
-    });
-
     this.subSystems.forEach((_options, subSystem) => {
       subSystem.resume();
     });
@@ -420,10 +455,7 @@ class ParticleSystem extends THREE.Object3D {
   public stop(clearParticles: boolean): void {
     this._playing = false;
     this._paused = false;
-
-    this.emitters.forEach((emitter) => {
-      emitter.stop();
-    });
+    this._ended = true;
 
     this.subSystems.forEach((_options, subSystem) => {
       subSystem.stop(clearParticles);
@@ -438,6 +470,25 @@ class ParticleSystem extends THREE.Object3D {
     this._emissionRuns.length = 0;
 
     if (clearParticles) this.clearParticles();
+  }
+
+  public destroy(): void {
+    if (this._destroyed) return;
+
+    this._destroyed = true;
+    this.stop(true);
+
+    this.subSystems.forEach((_options, subSystem) => {
+      subSystem.destroy();
+    });
+
+    this.renderers.forEach((renderer) => {
+      renderer.destroy();
+    });
+
+    this.removeFromParent();
+    this.cleanup();
+    this.dispatchEvent({ type: 'destroyed' } as unknown as Parameters<typeof this.dispatchEvent>[0]);
   }
 
   // Clear particles
@@ -638,14 +689,50 @@ class ParticleSystem extends THREE.Object3D {
     this._worldRendererRoot.removeFromParent();
   }
 
-  private getEmitterContext(): { transform?: THREE.Matrix4 } | undefined {
-    if (this.simulationSpace !== 'world') return undefined;
+  private getEmitterContext(): EmitterContext {
+    const context: EmitterContext = {
+      time: this.duration === 0 ? 1 : this._elapsedTime / this.duration,
+      duration: this.duration,
+      elapsedTime: this._elapsedTime,
+      looping: this.looping,
+    };
+
+    if (this.simulationSpace !== 'world') return context;
 
     this.updateWorldMatrix(true, false);
 
     return {
+      ...context,
       transform: this.matrixWorld.clone(),
     };
+  }
+
+  private _updateSystemTime(): void {
+    this._elapsedTime += this.deltaTime;
+
+    if (this.looping) {
+      while (this.duration > 0 && this._elapsedTime >= this.duration) {
+        this._elapsedTime -= this.duration;
+        this.emitters.forEach((emitter) => emitter.reset());
+      }
+      return;
+    }
+
+    if (this._elapsedTime >= this.duration) {
+      this._elapsedTime = this.duration;
+      this._playing = false;
+      this._ended = true;
+    }
+  }
+
+  private _handleEndBehavior(): void {
+    if (!this._ended || this.looping || this._destroyed) return;
+
+    if (this.endBehavior === EndBehavior.DestroyImmediate) {
+      this.destroy();
+    } else if (this.endBehavior === EndBehavior.Destroy && this.particles.length === 0) {
+      this.destroy();
+    }
   }
 
   private getRendererParent(): THREE.Object3D {

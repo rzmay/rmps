@@ -12,13 +12,13 @@ import circleSprite from 'url:../../assets/images/circle.png';
 
 export default async function createCollisionSubEmitters() {
   const collision = new ParticleSystem({
+    duration: 5,
+    looping: true,
     gravityModifier: 1,
     emitters: [
       new Emitter({
         source: EmissionShape.Sphere(0.25),
         rate: 30,
-        duration: 5,
-        looping: true,
         radialSpeed: [1, 5],
         initialValues: {
           lifetime: 8,
@@ -53,13 +53,13 @@ export default async function createCollisionSubEmitters() {
   });
 
   const sparks = new ParticleSystem({
+    duration: 0.08,
+    looping: false,
     gravityModifier: 0.35,
     emitters: [
       new Emitter({
         source: EmissionShape.Sphere(0.03),
         rate: 0,
-        duration: 0.08,
-        looping: false,
         bursts: [{ time: 0, count: 7 }],
         radialSpeed: [3.5, 7.5],
         initialValues: {

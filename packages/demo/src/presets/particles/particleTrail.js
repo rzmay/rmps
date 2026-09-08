@@ -15,6 +15,8 @@ export default async function createParticleTrail() {
   const simpleSpriteTexture = new THREE.TextureLoader().load(simpleSprite);
 
   const particleTrail = new ParticleSystem({
+    duration: 2,
+    looping: true,
     gravity: new THREE.Vector3(0, -1.5, 0),
     emitters: [
       new Emitter({
@@ -22,8 +24,6 @@ export default async function createParticleTrail() {
           geometry: new THREE.SphereGeometry(0.15, 12, 8),
         }),
         rate: 8,
-        duration: 2,
-        looping: true,
         initialValues: {
           lifetime: 2.5,
           velocity: [

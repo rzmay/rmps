@@ -1,5 +1,5 @@
 export { default as ParticleSystem } from './ParticleSystem';
-export { SimulationSpace } from './ParticleSystem';
+export { EndBehavior, SimulationSpace } from './ParticleSystem';
 export { default as Particle } from './Particle';
 
 export { EmissionSource } from './enums/EmissionSource';

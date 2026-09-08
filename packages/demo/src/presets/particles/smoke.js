@@ -16,6 +16,8 @@ import { curvePresets } from '../curvePresets';
 
 export default async function createSmoke() {
   const smoke = new ParticleSystem({
+    duration: 10,
+    looping: true,
     gravityModifier: -0.015,
     emitters: [
       new Emitter({
@@ -23,8 +25,6 @@ export default async function createSmoke() {
           geometry: new THREE.ConeGeometry(0.75, 1.2, 24),
         }),
         rate: 36,
-        duration: 10,
-        looping: true,
         radialSpeed: 0.18,
         initialValues: {
           lifetime: 4.5,
