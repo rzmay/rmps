@@ -139,11 +139,21 @@ const sparksOnly = new SpriteRenderer(undefined, { tags: "spark" });
 const fadeHot = new ColorOverLifetime({ tags: "hot", alpha: (t) => 1 - t });
 ```
 
-`tagSelection` can be:
+`tagSelection` can follows the `TagSelectionMethod` enum, and can be:
 
-- `"all"`: every emitted particle receives every emitter tag.
-- `"random"`: each particle receives one random tag.
-- `"distribute"`: tags are assigned round-robin.
+```ts
+enum TagSelectionMethod {
+  All = "all",
+  Random = "random",
+  Distribute = "distribute",
+}
+```
+
+| Value        | Behavior                                                 |
+| ------------ | -------------------------------------------------------- |
+| `All`        | Every emitted particle receives every emitter tag.scene. |
+| `Random`     | Each particle receives one random tag.                   |
+| `Distribute` | Tags are assigned round-robin.                           |
 
 ## Particle Systems
 
@@ -190,13 +200,20 @@ enum EndBehavior {
 
 ### Simulation Space
 
-`simulationSpace` controls whether particle positions are stored relative to the
-particle system or in world space.
+`simulationSpace` follows the `SimulationSpace` enum and controls whether
+particle positions are stored relative to the particle system or in world space.
 
-| Value     | Behavior                                                                                       |
-| --------- | ---------------------------------------------------------------------------------------------- |
-| `"local"` | Particles move with the particle system transform.                                             |
-| `"world"` | New particles spawn from the system transform, then remain in world space if the system moves. |
+```ts
+enum EndBehavior {
+  Local = "local",
+  World = "world",
+}
+```
+
+| Value   | Behavior                                                                                       |
+| ------- | ---------------------------------------------------------------------------------------------- |
+| `Local` | Particles move with the particle system transform.                                             |
+| `World` | New particles spawn from the system transform, then remain in world space if the system moves. |
 
 Subsystems inherit the parent system's simulation space.
 
@@ -297,7 +314,7 @@ interface EmitterOptions {
   radialSpeed: DynamicValue<number>;
   alignment: DynamicValue<number>;
   tags: StrictMultiple<Tag>;
-  tagSelection: "all" | "random" | "distribute";
+  tagSelection: TagSelectionMethod;
 }
 ```
 
@@ -634,7 +651,7 @@ interface SpriteRendererOptions extends RendererOptions {
   frames: number;
   randomStartFrame: boolean;
   alphaMap: string | THREE.Texture;
-  material: "unlit" | "basic";
+  material: SpriteMaterialType;
   materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
   castShadow: boolean;
   softParticleDistance: number;
@@ -643,6 +660,15 @@ interface SpriteRendererOptions extends RendererOptions {
 
 `SpriteRenderer` renders particles as GPU points. It supports sprite sheets,
 alpha maps, random start frames, shadows, and soft particles.
+
+`SpriteMaterialType` is an enum consisting of two string values:
+
+```ts
+enum SpriteMaterialType {
+  Basic = "basic",
+  Unlit = "unlit",
+}
+```
 
 `material: "unlit"` uses `UnlitSpriteOptions`:
 
