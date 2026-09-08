@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import Particle, { ParticleOptions } from './Particle';
 import Emitter from './Emitter';
 import Module from './Module';
-import { Renderer } from './Renderer';
+import Renderer from './Renderer';
 import acceptMultiple from './helpers/acceptMultiple';
 import SpriteRenderer from './renderers/SpriteRenderer';
 import { Multiple } from './types/Multiple';
@@ -12,6 +12,8 @@ import particleRatio from './helpers/particleRatio';
 import { CollisionListener } from './modules/Collision';
 import { CollisionHit } from './interfaces/ICollisionBackend';
 import { Tag } from './types/Tag';
+import { EndBehavior } from './enums/EndBehavior';
+import { SimulationSpace } from './enums/SimulationSpace';
 
 interface ParticleSystemOptions {
   emitters: Multiple<Emitter>;
@@ -19,10 +21,10 @@ interface ParticleSystemOptions {
   modules: Multiple<Module>;
   duration: number;
   looping: boolean;
-  endBehavior: EndBehavior;
+  endBehavior: EndBehavior | `${EndBehavior}`;
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
-  simulationSpace: SimulationSpace;
+  simulationSpace: SimulationSpace | `${SimulationSpace}`;
 }
 
 export interface SubSystemOptions {
@@ -48,13 +50,6 @@ interface SubSystemEmissionRun {
 }
 
 export type ParticleListener = (particle: Particle) => void;
-export type SimulationSpace = 'local' | 'world';
-
-export enum EndBehavior {
-  Nothing,
-  Destroy,
-  DestroyImmediate,
-}
 
 type EmitterContext = {
   transform?: THREE.Matrix4;
@@ -77,7 +72,7 @@ class ParticleSystem extends THREE.Object3D {
   looping: boolean;
   endBehavior: EndBehavior;
 
-  private _simulationSpace: SimulationSpace = 'local';
+  private _simulationSpace: SimulationSpace = SimulationSpace.Local;
   get simulationSpace(): SimulationSpace {
     return this._simulationSpace;
   }
@@ -132,7 +127,7 @@ class ParticleSystem extends THREE.Object3D {
     this.modules = acceptMultiple(options.modules) ?? [];
     this.duration = options.duration ?? 10;
     this.looping = options.looping ?? true;
-    this.endBehavior = options.endBehavior ?? EndBehavior.Nothing;
+    this.endBehavior = (options.endBehavior as EndBehavior) ?? EndBehavior.None;
 
     // If gravity is passed in, gravityModifier will be set to 1.
     // In effect, this means gravity will be turned off by default,
@@ -140,7 +135,7 @@ class ParticleSystem extends THREE.Object3D {
     this.gravity = options.gravity ?? new THREE.Vector3(0, -9.81, 0);
     this.gravityModifier = options.gravityModifier ?? (options.gravity ? 1 : 0);
 
-    this._simulationSpace = options.simulationSpace ?? this._simulationSpace;
+    this._simulationSpace = (options.simulationSpace as SimulationSpace) ?? this._simulationSpace;
     this._worldRendererRoot.name = 'ParticleSystem World Renderers';
 
     this.lastFrame = Date.now();
@@ -697,7 +692,7 @@ class ParticleSystem extends THREE.Object3D {
       looping: this.looping,
     };
 
-    if (this.simulationSpace !== 'world') return context;
+    if (this.simulationSpace !== SimulationSpace.World) return context;
 
     this.updateWorldMatrix(true, false);
 
@@ -736,7 +731,7 @@ class ParticleSystem extends THREE.Object3D {
   }
 
   private getRendererParent(): THREE.Object3D {
-    if (this.simulationSpace !== 'world') return this;
+    if (this.simulationSpace !== SimulationSpace.World) return this;
 
     return this._worldRendererRoot;
   }
@@ -744,7 +739,7 @@ class ParticleSystem extends THREE.Object3D {
   private syncRendererParents(): void {
     const worldRendererParent = this.getWorldRendererParent();
 
-    if (this.simulationSpace === 'world') {
+    if (this.simulationSpace === SimulationSpace.World) {
       if (worldRendererParent && this._worldRendererRoot.parent !== worldRendererParent) {
         worldRendererParent.add(this._worldRendererRoot);
       }
@@ -771,7 +766,7 @@ class ParticleSystem extends THREE.Object3D {
   private convertParticlesToSimulationSpace(space: SimulationSpace): void {
     this.updateWorldMatrix(true, false);
 
-    if (space === 'world') {
+    if (space === SimulationSpace.World) {
       this.particles.forEach((particle) => {
         this.localToWorld(particle.position);
         this.localDirectionToWorld(particle.velocity);

@@ -6,7 +6,7 @@ import isPointInMesh from './helpers/isPointInMesh';
 
 interface EmissionShapeOptions {
     geometry: THREE.BufferGeometry;
-    source: EmissionSource;
+    source: EmissionSource | `${EmissionSource}`;
 }
 
 class EmissionShape extends THREE.Object3D {
@@ -48,7 +48,7 @@ class EmissionShape extends THREE.Object3D {
       super();
 
       this._geometry = options.geometry ?? new THREE.SphereGeometry();
-      this.source = options.source ?? EmissionSource.Volume;
+      this.source = (options.source as EmissionSource) ?? EmissionSource.Volume;
 
       this._mesh = new THREE.Mesh(this._geometry, EmissionShape._doubleSidedMaterial);
       this._surfaceSampler = new MeshSurfaceSampler(this._mesh)
@@ -153,7 +153,8 @@ class EmissionShape extends THREE.Object3D {
 
     getPoint(overrideSource?: EmissionSource): { position: THREE.Vector3, normal: THREE.Vector3 } {
       switch (overrideSource ?? this.source) {
-        case EmissionSource.Vertices: // Select random vertex
+        case EmissionSource.Vertices:
+          // Select random vertex
           const { vertices } = this;
           const vertexIndex = Math.floor(Math.random() * vertices.length);
           return {
@@ -161,7 +162,8 @@ class EmissionShape extends THREE.Object3D {
             normal: this._toParentNormal(this._vertexNormals[vertexIndex]),
           };
 
-        case EmissionSource.Surface: // Use surface sampler to find random point on surface
+        case EmissionSource.Surface:
+          // Use surface sampler to find random point on surface
           const position: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
           const normal: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
           this._surfaceSampler.sample(position, normal);
@@ -170,8 +172,13 @@ class EmissionShape extends THREE.Object3D {
             normal: this._toParentNormal(normal),
           };
 
-        default: // Choose random points in bounding box until one is contained by geometry (volume)
-          const { min, max } = this._geometry.boundingBox!;
+        case EmissionSource.Volume:
+        default:
+          // If no bounding box, fallback to surface
+          if (!this._geometry.boundingBox) return this.getPoint(EmissionSource.Surface);
+
+          // Choose random points in bounding box until one is contained by geometry (volume)
+          const { min, max } = this._geometry.boundingBox;
           const randomPoint = new THREE.Vector3(
             THREE.MathUtils.lerp(min.x, max.x, Math.random()),
             THREE.MathUtils.lerp(min.y, max.y, Math.random()),

@@ -164,7 +164,7 @@ interface ParticleSystemOptions {
   endBehavior: EndBehavior;
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
-  simulationSpace: "local" | "world";
+  simulationSpace: SimulationSpace;
 }
 ```
 
@@ -176,15 +176,15 @@ duration has elapsed.
 
 ```ts
 enum EndBehavior {
-  Nothing,
-  Destroy,
-  DestroyImmediate,
+  None = "none",
+  Destroy = "destroy",
+  DestroyImmediate = "destroyImmediate",
 }
 ```
 
 | Value              | Behavior                                                              |
 | ------------------ | --------------------------------------------------------------------- |
-| `Nothing`          | Stops emission and keeps the system in the scene.                     |
+| `None`             | Stops emission and keeps the system in the scene.                     |
 | `Destroy`          | Stops emission, lets live particles finish, then destroys the system. |
 | `DestroyImmediate` | Destroys the system as soon as its duration elapses.                  |
 
@@ -340,9 +340,9 @@ interface EmissionShapeOptions {
 }
 
 enum EmissionSource {
-  Volume,
-  Surface,
-  Vertices,
+  Volume = "volume",
+  Surface = "surface",
+  Vertices = "vertices",
 }
 ```
 
@@ -705,15 +705,15 @@ Renders particles as an `InstancedMesh`. Pass a complete `mesh`, or pass
 new TrailRenderer(options?: Partial<TrailRendererOptions>)
 
 enum TrailMode {
-  Particle,
-  Ribbon,
+  Particle = "particle",
+  Ribbon = "ribbon",
 }
 
 enum TrailTextureMode {
-  Stretch,
-  Tile,
-  RepeatPerSegment,
-  DistributePerSegment,
+  Stretch = "stretch",
+  Tile = "tile",
+  RepeatPerSegment = "repeat",
+  DistributePerSegment = "distribute",
 }
 
 interface TrailRendererOptions extends RendererOptions {

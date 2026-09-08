@@ -9,7 +9,7 @@ export interface RendererOptions {
     tags: StrictMultiple<Tag>;
 }
 
-export abstract class Renderer {
+export default abstract class Renderer {
     tags?: Tag[];
 
     constructor(options: Partial<RendererOptions> = {}) {

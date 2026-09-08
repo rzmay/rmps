@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer, RendererOptions } from '../Renderer';
+import Renderer, { RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/default.png';
@@ -8,6 +8,7 @@ import BasicSprite, { BasicSpriteOptions } from '../materials/BasicSprite';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import seedrandom from 'seedrandom';
+import { SpriteMaterialType } from '../enums/SpriteMaterialType';
 
 type SceneDepthData = {
   target: THREE.WebGLRenderTarget;
@@ -32,7 +33,7 @@ export interface SpriteRendererOptions extends RendererOptions {
   frames: number;
   randomStartFrame: boolean;
   alphaMap: string | THREE.Texture;
-  material: 'unlit' | 'basic';
+  material: SpriteMaterialType | `${SpriteMaterialType}`;
   materialOptions: BasicSpriteOptions | UnlitSpriteOptions;
   castShadow: boolean;
   softParticleDistance: number;
@@ -45,7 +46,7 @@ class SpriteRenderer extends Renderer {
 
   alphaMap?: THREE.Texture;
 
-  materialType: 'unlit' | 'basic' = 'unlit';
+  materialType: SpriteMaterialType = SpriteMaterialType.Unlit;
 
   tileSize: THREE.Vector2 = new THREE.Vector2(0, 0);
 
@@ -96,7 +97,7 @@ class SpriteRenderer extends Renderer {
     this.alphaMap = typeof options.alphaMap === 'string'
       ? textureLoader.load(options.alphaMap)
       : options.alphaMap;
-    this.materialType = options.material ?? this.materialType;
+    this.materialType = (options.material as SpriteMaterialType) ?? this.materialType;
     this.tileSize = new THREE.Vector2(options.tileSize?.x, options.tileSize?.y);
     this.tileMargin = new THREE.Vector2(options.tileMargin?.x, options.tileMargin?.y);
     this.gridSize = new THREE.Vector2(options.gridSize?.x ?? 1, options.gridSize?.y ?? 1);
@@ -238,7 +239,7 @@ class SpriteRenderer extends Renderer {
   }
 
   private loadMaterial(options: BasicSpriteOptions | UnlitSpriteOptions | undefined) {
-    const createMaterial = this.materialType === 'basic' ? BasicSprite : UnlitSprite;
+    const createMaterial = this.materialType === SpriteMaterialType.Basic ? BasicSprite : UnlitSprite;
 
     return createMaterial(this.texture, {
       ...(options ?? {}),
@@ -254,7 +255,7 @@ class SpriteRenderer extends Renderer {
     renderer: THREE.WebGLRenderer,
     environment: THREE.Texture | null
   ): void {
-    if (this.materialType !== 'basic')
+    if (this.materialType !== SpriteMaterialType.Basic)
       return;
 
     if (
@@ -306,7 +307,7 @@ class SpriteRenderer extends Renderer {
   private setEnvironmentMap(
     environment: THREE.Texture | null
   ): void {
-    if (this.materialType !== 'basic')
+    if (this.materialType !== SpriteMaterialType.Basic)
       return;
 
     this.material.uniforms.envMap.value = environment;

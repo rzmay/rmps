@@ -10,14 +10,13 @@ import ParticleSystem from './ParticleSystem';
 import { DynamicUntimedValue, DynamicValue } from './types/DynamicValue';
 import { Multiple, StrictMultiple } from './types/Multiple';
 import { Tag } from './types/Tag';
+import { TagSelectionMethod } from './enums/TagSelectionMethod';
 
 type SpawnBurst = {
     time: number,
     count: DynamicUntimedValue<number>,
     fired?: boolean,
 };
-
-type TagSelectionMethod = 'all' | 'random' | 'distribute';
 
 interface EmitterOptions {
     initialValues: Partial<InitialParticleValues>;
@@ -29,7 +28,7 @@ interface EmitterOptions {
     alignment: DynamicValue<number>;
 
     tags: StrictMultiple<Tag>;
-    tagSelection: TagSelectionMethod;
+    tagSelection: TagSelectionMethod | `${TagSelectionMethod}`;
 }
 
 interface EmitterContextState {
@@ -61,7 +60,7 @@ class Emitter {
   alignment: DynamicValue<number>;
 
   tags?: Tag[];
-  tagSelection: TagSelectionMethod = 'all';
+  tagSelection: TagSelectionMethod = TagSelectionMethod.All;
 
   private _lastTagIndex: number = 0;
 
@@ -80,8 +79,7 @@ class Emitter {
     this.alignment = options.alignment ?? 0;
 
     this.tags = acceptMultiple(options.tags);
-    this.tagSelection = options.tagSelection ?? this.tagSelection;
-
+    this.tagSelection = (options.tagSelection as TagSelectionMethod) ?? this.tagSelection;
   }
 
   /*

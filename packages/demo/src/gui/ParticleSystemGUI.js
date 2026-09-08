@@ -64,9 +64,7 @@ const DEFAULT_RENDERER_FACTORIES = {
     Light: () => new LightRenderer(),
     Trail: () => new TrailRenderer(),
 };
-const END_BEHAVIOR_OPTIONS = Object.fromEntries(
-    Object.entries(EndBehavior).filter(([key, value]) => Number.isNaN(Number(key)) && typeof value === 'number')
-);
+const END_BEHAVIOR_OPTIONS = EndBehavior;
 export class ParticleSystemGUI {
     constructor(options) {
         this.presetLoadVersion = 0;
@@ -1050,7 +1048,7 @@ export class ParticleSystemGUI {
         return lines;
     }
     serializeEndBehavior(value) {
-        return `EndBehavior.${EndBehavior[value] ?? 'Nothing'}`;
+        return `EndBehavior.${EndBehavior[value] ?? 'None'}`;
     }
 
     serializeSubSystemOptions(options) {

@@ -1,17 +1,21 @@
 export { default as ParticleSystem } from './ParticleSystem';
-export { EndBehavior, SimulationSpace } from './ParticleSystem';
 export { default as Particle } from './Particle';
+export { EndBehavior } from './enums/EndBehavior';
+export { SimulationSpace } from './enums/SimulationSpace';
 
-export { EmissionSource } from './enums/EmissionSource';
 export { default as EmissionShape } from './EmissionShape';
 export { default as Emitter } from './Emitter';
+export { EmissionSource } from './enums/EmissionSource';
+export { TagSelectionMethod } from './enums/TagSelectionMethod';
 
-export { Renderer } from './Renderer';
+export { default as Renderer } from './Renderer';
 export { default as LightRenderer } from './renderers/LightRenderer';
 export { default as MeshRenderer } from './renderers/MeshRenderer';
 export { default as SpriteRenderer } from './renderers/SpriteRenderer';
+export { SpriteMaterialType } from './enums/SpriteMaterialType';
 export { default as TrailRenderer } from './renderers/TrailRenderer';
-export { TrailMode, TrailTextureMode } from './renderers/TrailRenderer';
+export { TrailMode } from './enums/TrailMode';
+export { TrailTextureMode } from './enums/TrailTextureMode';
 
 export { default as Module } from './Module';
 export { default as NoiseModule } from './modules/NoiseModule';

@@ -1,8 +1,9 @@
 enum EmissionSource {
-    Volume,
-    Surface,
-    Vertices,
+    Volume = "volume",
+    Surface = "surface",
+    Vertices = "vertices",
 }
 
-// eslint-disable-next-line import/prefer-default-export
+export type EmissionSourceValue = EmissionSource | `${EmissionSource}`;
+
 export { EmissionSource };

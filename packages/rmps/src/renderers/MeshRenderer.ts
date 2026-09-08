@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Renderer, RendererOptions } from '../Renderer';
+import Renderer, { RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
 

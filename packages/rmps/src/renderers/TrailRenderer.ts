@@ -1,27 +1,17 @@
 import * as THREE from 'three';
 import seedrandom from 'seedrandom';
-import { Renderer, RendererOptions } from '../Renderer';
+import Renderer, { RendererOptions } from '../Renderer';
 import Particle from '../Particle';
 import ParticleSystem from '../ParticleSystem';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import evaluateDynamicColor from '../helpers/evaluateDynamicColor';
-
-export enum TrailMode {
-  Particle,
-  Ribbon,
-};
-
-export enum TrailTextureMode {
-  Stretch,
-  Tile,
-  RepeatPerSegment,
-  DistributePerSegment,
-};
+import { TrailMode } from '../enums/TrailMode';
+import { TrailTextureMode } from '../enums/TrailTextureMode';
 
 export interface TrailRendererOptions extends RendererOptions {
-  mode: TrailMode;
-  textureMode: TrailTextureMode;
+  mode: TrailMode | `${TrailMode}`;
+  textureMode: TrailTextureMode | `${TrailTextureMode}`;
 
   ratio: number;
   lifetime: DynamicValue<number>;
@@ -124,13 +114,13 @@ class TrailRenderer extends Renderer {
   ) {
     super(options);
 
-    this.mode = options.mode ?? this.mode;
+    this.mode = (options.mode as TrailMode) ?? this.mode;
     this.ratio = options.ratio ?? this.ratio;
     this.lifetime = options.lifetime ?? this.lifetime;
     this.minimumVertexDistance = options.minimumVertexDistance ?? this.minimumVertexDistance;
     this.dieWithParticles = options.dieWithParticles ?? this.dieWithParticles;
     this.ribbonCount = options.ribbonCount ?? this.ribbonCount;
-    this.textureMode = options.textureMode ?? this.textureMode;
+    this.textureMode = (options.textureMode as TrailTextureMode) ?? this.textureMode;
 
     this.width = options.width ?? this.width;
     this.sizeAffectsWidth = options.sizeAffectsWidth ?? this.sizeAffectsWidth;
