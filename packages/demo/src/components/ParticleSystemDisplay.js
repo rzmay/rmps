@@ -5,7 +5,14 @@ import { ParticleSystemGUI } from '../gui/ParticleSystemGUI';
 import particlePresets from '../presets/particles';
 import scenePresets from '../presets/scenes';
 
-function ParticleSystemDisplay({ onCodeChange, onShowCodeChange }) {
+function ParticleSystemDisplay({
+  initialPreset,
+  initialScene,
+  onCodeChange,
+  onPresetChange,
+  onSceneChange,
+  onShowCodeChange,
+}) {
   const particleSystem = useRef(null);
   const guiRef = useRef(null);
   const { scene } = useThree();
@@ -14,7 +21,6 @@ function ParticleSystemDisplay({ onCodeChange, onShowCodeChange }) {
     let cancelled = false;
 
     async function initialize() {
-      const initialPreset = 'Fire';
       const system = await particlePresets[initialPreset]();
 
       if (cancelled) return;
@@ -28,20 +34,17 @@ function ParticleSystemDisplay({ onCodeChange, onShowCodeChange }) {
         presets: particlePresets,
         scenes: scenePresets,
         initialPreset,
-        initialScene: 'Checkerboard',
+        initialScene,
         title: 'RMPS Demo',
         width: 340,
         onSystemChange: (nextSystem) => {
           particleSystem.current = nextSystem;
         },
         onCodeChange,
+        onPresetChange,
+        onSceneChange,
+        onShowCodeChange,
       });
-
-      const viewState = { showCode: false };
-      gui.gui
-        .add(viewState, 'showCode')
-        .name('Show code')
-        .onChange(onShowCodeChange);
 
       guiRef.current = gui;
     }
@@ -58,7 +61,13 @@ function ParticleSystemDisplay({ onCodeChange, onShowCodeChange }) {
         particleSystem.current = null;
       }
     };
-  }, [onCodeChange, onShowCodeChange, scene]);
+  }, [
+    onCodeChange,
+    onPresetChange,
+    onSceneChange,
+    onShowCodeChange,
+    scene,
+  ]);
 
   useFrame(() => {
     particleSystem.current?.update();
@@ -68,7 +77,11 @@ function ParticleSystemDisplay({ onCodeChange, onShowCodeChange }) {
 }
 
 ParticleSystemDisplay.propTypes = {
+  initialPreset: PropTypes.string.isRequired,
+  initialScene: PropTypes.string.isRequired,
   onCodeChange: PropTypes.func.isRequired,
+  onPresetChange: PropTypes.func.isRequired,
+  onSceneChange: PropTypes.func.isRequired,
   onShowCodeChange: PropTypes.func.isRequired,
 };
 

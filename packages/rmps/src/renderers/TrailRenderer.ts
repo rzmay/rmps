@@ -135,6 +135,8 @@ class TrailRenderer extends Renderer {
     this.receiveShadow = options.receiveShadow ?? this.receiveShadow;
 
     this.geometry = new THREE.BufferGeometry();
+    this.setEmptyGeometry();
+
     this.material = options.material ?? new THREE.MeshStandardMaterial({
       vertexColors: true,
       side: THREE.DoubleSide,
@@ -158,6 +160,12 @@ class TrailRenderer extends Renderer {
 
   setup(system: ParticleSystem): void {
     system.addRendererObject(this.mesh);
+
+    this.mesh.onBeforeRender = (renderer, _scene, camera) => {
+      if (!(renderer as { isWebGPURenderer?: boolean }).isWebGPURenderer) return;
+
+      this.rebuildGeometry(camera);
+    };
   }
 
   _update(particles: Particle[], system: ParticleSystem): void {
@@ -390,6 +398,11 @@ class TrailRenderer extends Renderer {
       );
     }
 
+    if (positions.length === 0) {
+      this.setEmptyGeometry();
+      return;
+    }
+
     this.geometry.setAttribute(
       'position',
       new THREE.Float32BufferAttribute(
@@ -423,12 +436,64 @@ class TrailRenderer extends Renderer {
     );
 
     this.geometry.setIndex(indices);
+    this.geometry.setDrawRange(0, Infinity);
 
     if (positions.length > 0) {
       this.geometry.computeBoundingSphere();
     } else {
       this.geometry.boundingSphere = null;
     }
+  }
+
+  private setEmptyGeometry(): void {
+    this.geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(
+        new Float32Array(12),
+        3,
+      ),
+    );
+
+    this.geometry.setAttribute(
+      'normal',
+      new THREE.Float32BufferAttribute(
+        new Float32Array([
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+          0, 0, 1,
+        ]),
+        3,
+      ),
+    );
+
+    this.geometry.setAttribute(
+      'uv',
+      new THREE.Float32BufferAttribute(
+        new Float32Array(8),
+        2,
+      ),
+    );
+
+    this.geometry.setAttribute(
+      'color',
+      new THREE.Float32BufferAttribute(
+        new Float32Array([
+          1, 1, 1, 0,
+          1, 1, 1, 0,
+          1, 1, 1, 0,
+          1, 1, 1, 0,
+        ]),
+        4,
+      ),
+    );
+
+    this.geometry.setIndex([0, 1, 2, 1, 3, 2]);
+    this.geometry.setDrawRange(0, 0);
+    this.geometry.boundingSphere = new THREE.Sphere(
+      new THREE.Vector3(),
+      0,
+    );
   }
 
   private appendPathGeometry(

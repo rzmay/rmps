@@ -77,7 +77,10 @@ export class ParticleSystemGUI {
         this.rendererFactories = { ...DEFAULT_RENDERER_FACTORIES, ...options.rendererFactories };
         this.subSystemFactories = options.subSystemFactories ?? {};
         this.onSystemChange = options.onSystemChange;
+        this.onPresetChange = options.onPresetChange;
+        this.onSceneChange = options.onSceneChange;
         this.onCodeChange = options.onCodeChange;
+        this.onShowCodeChange = options.onShowCodeChange;
         this.currentPresetName = options.initialPreset;
         this.currentSceneName = options.initialScene;
         this.handleSystemDestroyed = () => {
@@ -92,6 +95,13 @@ export class ParticleSystemGUI {
         });
         this.injectStyles();
         this.gui.onChange(() => this.emitCode());
+        if (this.onShowCodeChange) {
+            const viewState = { showCode: false };
+            this.gui
+                .add(viewState, 'showCode')
+                .name('Show code')
+                .onChange(this.onShowCodeChange);
+        }
         this.rebuild();
         if (this.currentSceneName)
             void this.setScene(this.currentSceneName);
@@ -114,6 +124,7 @@ export class ParticleSystemGUI {
         this.system = next;
         this.system.addEventListener?.('destroyed', this.handleSystemDestroyed);
         this.onSystemChange?.(next, previous);
+        this.onPresetChange?.(presetName);
         this.rebuild();
         this.emitCode();
     }
@@ -191,6 +202,7 @@ export class ParticleSystemGUI {
         this.sceneCleanup?.();
         this.sceneCleanup = undefined;
         this.currentSceneName = name;
+        this.onSceneChange?.(name);
         const cleanup = await this.scenes[name](this.scene);
         if (version !== this.sceneLoadVersion) {
             if (typeof cleanup === 'function')
@@ -486,7 +498,7 @@ export class ParticleSystemGUI {
         this.addTags(folder, module);
         const candidate = module;
         if (candidate.options && typeof candidate.options === 'object') {
-            this.addObject(folder, candidate.options);
+            this.addObject(folder, candidate.options, new Set(['tags']));
         }
         else {
             const hidden = new Set([

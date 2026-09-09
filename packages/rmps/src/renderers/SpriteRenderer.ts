@@ -5,6 +5,8 @@ import ParticleSystem from '../ParticleSystem';
 import simple from '../assets/images/default.png';
 import UnlitSprite, { UnlitSpriteOptions } from '../materials/UnlitSprite';
 import BasicSprite, { BasicSpriteOptions } from '../materials/BasicSprite';
+import WebGPUUnlitSprite from '../materials/WebGPUUnlitSprite';
+import WebGPUBasicSprite from '../materials/WebGPUBasicSprite';
 import { DynamicValue } from '../types/DynamicValue';
 import evaluateDynamicNumber from '../helpers/evaluateDynamicNumber';
 import seedrandom from 'seedrandom';
@@ -17,13 +19,41 @@ type SceneDepthData = {
   rendering: boolean;
 };
 
+type WebGPUSceneDepthData = {
+  target: THREE.RenderTarget;
+  material: THREE.MeshBasicMaterial;
+  rendering: boolean;
+};
+
 type HiddenSpriteRenderer = {
   object: THREE.Object3D;
   visible: boolean;
 };
 
+type RendererLike = THREE.WebGLRenderer & {
+  isWebGPURenderer?: boolean;
+  domElement?: HTMLCanvasElement;
+};
+
+type WebGPURendererLike = {
+  isWebGPURenderer?: boolean;
+  info: THREE.WebGLRenderer['info'];
+  clear(): void;
+  getDrawingBufferSize(target: THREE.Vector2): THREE.Vector2;
+  getRenderTarget(): THREE.RenderTarget | null;
+  render(scene: THREE.Scene, camera: THREE.Camera): void;
+  setRenderTarget(target: THREE.RenderTarget | null): void;
+};
+
 const SPRITE_RENDERER_USER_DATA_KEY = "__rmps_spriteRenderer";
+const TRAIL_RENDERER_USER_DATA_KEY = "__rmps_trailRenderer";
 const SCENE_DEPTH_DATA_USER_DATA_KEY = "__rmps_sceneDepthData";
+const WEBGPU_SCENE_DEPTH_DATA_USER_DATA_KEY = "__rmps_webgpuSceneDepthData";
+const WEBGPU_SCENE_DEPTH_TEXTURE = new THREE.DepthTexture(
+  1,
+  1,
+  THREE.UnsignedIntType,
+);
 
 export interface SpriteRendererOptions extends RendererOptions {
   fps: DynamicValue<number>;
@@ -63,6 +93,13 @@ class SpriteRenderer extends Renderer {
   softParticleDistance: number = 0;
 
   private material: THREE.ShaderMaterial;
+  private webgpuMaterial: THREE.Material;
+  private readonly hiddenMaterial = new THREE.MeshBasicMaterial({
+    colorWrite: false,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0,
+  });
 
   private _materialOptions: BasicSpriteOptions | UnlitSpriteOptions | undefined;
   get materialOptions(): BasicSpriteOptions | UnlitSpriteOptions | undefined { return this._materialOptions; }
@@ -70,6 +107,8 @@ class SpriteRenderer extends Renderer {
     this._materialOptions = value;
     this.material = this.loadMaterial(value);
     this.points.material = this.material;
+    this.webgpuMaterial = this.loadWebGPUMaterial(value);
+    this.webgpuMesh.material = this.webgpuMaterial;
   }
 
   private environmentSource?: THREE.Texture;
@@ -79,6 +118,19 @@ class SpriteRenderer extends Renderer {
   private readonly geometry: THREE.BufferGeometry;
 
   private readonly points: THREE.Points;
+  private readonly webgpuGeometry: THREE.PlaneGeometry;
+  private readonly webgpuMesh: THREE.InstancedMesh;
+  private webgpuFrameAttribute: THREE.InstancedBufferAttribute;
+  private webgpuAlphaAttribute: THREE.InstancedBufferAttribute;
+  private webgpuCapacity = 10000;
+
+  private readonly matrix = new THREE.Matrix4();
+  private readonly quaternion = new THREE.Quaternion();
+  private readonly cameraQuaternion = new THREE.Quaternion();
+  private readonly rollQuaternion = new THREE.Quaternion();
+  private readonly rollAxis = new THREE.Vector3(0, 0, 1);
+  private readonly scaleVector = new THREE.Vector3();
+  private readonly color = new THREE.Color();
 
   constructor(texture: string | THREE.Texture = simple, options: Partial<SpriteRendererOptions> = {}) {
     super(options);
@@ -117,21 +169,72 @@ class SpriteRenderer extends Renderer {
     this.points = new THREE.Points(this.geometry, this.material);
     this.points.frustumCulled = false;
     this.points.castShadow = this.castShadow;
+    this.points.visible = false;
+    this.points.material = this.hiddenMaterial;
+
+    this.webgpuGeometry = new THREE.PlaneGeometry(1, 1);
+    this.webgpuFrameAttribute = new THREE.InstancedBufferAttribute(new Float32Array(this.webgpuCapacity), 1);
+    this.webgpuAlphaAttribute = new THREE.InstancedBufferAttribute(new Float32Array(this.webgpuCapacity), 1);
+    this.webgpuGeometry.setAttribute('frame', this.webgpuFrameAttribute);
+    this.webgpuGeometry.setAttribute('instanceAlpha', this.webgpuAlphaAttribute);
+
+    this.webgpuMaterial = this.loadWebGPUMaterial(this._materialOptions);
+    this.webgpuMesh = new THREE.InstancedMesh(
+      this.webgpuGeometry,
+      this.webgpuMaterial,
+      this.webgpuCapacity,
+    );
+    this.webgpuMesh.frustumCulled = false;
+    this.webgpuMesh.castShadow = this.castShadow;
+    this.webgpuMesh.count = 0;
+    this.webgpuMesh.visible = false;
+    this.webgpuMesh.setColorAt(0, new THREE.Color(1, 1, 1));
 
     // Add user data to the points so we can recognize it elsewhere
     this.points.userData[SPRITE_RENDERER_USER_DATA_KEY] = true;
+    this.webgpuMesh.userData[SPRITE_RENDERER_USER_DATA_KEY] = true;
   }
 
   setup(system: ParticleSystem) {
     system.addRendererObject(this.points);
+    system.addRendererObject(this.webgpuMesh);
+
+    this.points.onBeforeRender = (renderer) => this.setActiveRenderer(renderer as RendererLike);
+    this.webgpuMesh.onBeforeRender = (renderer) => this.setActiveRenderer(renderer as RendererLike);
   }
 
   _update(particles: Particle[], system: ParticleSystem): void {
+    this.setActiveRenderer(system.sceneRenderer as RendererLike | undefined);
+
     // Update attributes
-    this.updateAttributes(particles);
+    if (this.isWebGPURenderer(system.sceneRenderer as RendererLike | undefined)) {
+      this.updateWebGPUInstances(
+        particles,
+        system.sceneCamera,
+        system.sceneRenderer as RendererLike | undefined,
+      );
+    } else {
+      this.updateAttributes(particles);
+    }
 
     // Should the points cast a shadow?
     this.points.castShadow = this.castShadow;
+    this.webgpuMesh.castShadow = this.castShadow;
+
+    const environment =
+        this._materialOptions && 'envMap' in this._materialOptions
+            ? this._materialOptions.envMap ?? system.scene?.environment ?? null
+            : system.scene?.environment ?? null;
+
+    if (this.isWebGPURenderer(system.sceneRenderer as RendererLike | undefined)) {
+      this.updateWebGPUEnvironmentMap(environment);
+      this.updateWebGPUSoftParticles(
+        system.sceneRenderer as unknown as WebGPURendererLike | undefined,
+        system.scene,
+        system.sceneCamera,
+      );
+      return;
+    }
 
     // Set uniforms for soft particles
     this.setUniformValue('softParticles', Boolean(this.softParticleDistance));
@@ -165,11 +268,6 @@ class SpriteRenderer extends Renderer {
     } else {
       this.setUniformValue('softParticles', false);
     }
-
-    const environment =
-        this._materialOptions && 'envMap' in this._materialOptions
-            ? this._materialOptions.envMap ?? system.scene.environment
-            : system.scene.environment;
 
     // Update environment map
     this.updateEnvironmentMap(system.sceneRenderer, environment);
@@ -214,17 +312,7 @@ class SpriteRenderer extends Renderer {
 
     this.geometry.setAttribute('frame', new THREE.BufferAttribute(
       new Float32Array(
-        particles.flatMap(
-          (particle: Particle) => (
-            this.randomStartFrame
-              ? Math.floor(seedrandom(particle.id).quick() * this.frames)
-              : 0
-          ) + (
-            Math.floor(
-              particle.realtime * evaluateDynamicNumber(this.fps, particle.time, particle.id),
-            ) % this.frames
-          ),
-        ),
+        particles.flatMap((particle: Particle) => this.getParticleFrame(particle)),
       ),
       1,
     ));
@@ -235,7 +323,14 @@ class SpriteRenderer extends Renderer {
     this.environmentRenderTarget?.dispose();
     this.environmentRenderTarget = undefined;
 
+    this.geometry.dispose();
+    this.material.dispose();
+    this.webgpuGeometry.dispose();
+    this.webgpuMaterial.dispose();
+    this.hiddenMaterial.dispose();
+
     this.points.removeFromParent();
+    this.webgpuMesh.removeFromParent();
   }
 
   private loadMaterial(options: BasicSpriteOptions | UnlitSpriteOptions | undefined) {
@@ -247,8 +342,153 @@ class SpriteRenderer extends Renderer {
       frames: this.frames,
       gridSize: this.gridSize,
       alphaMap: this.alphaMap,
-      softParticleDistance: this.softParticleDistance
+      softParticleDistance: this.softParticleDistance,
     });
+  }
+
+  private loadWebGPUMaterial(options: BasicSpriteOptions | UnlitSpriteOptions | undefined) {
+    const createMaterial = this.materialType === SpriteMaterialType.Basic ? WebGPUBasicSprite : WebGPUUnlitSprite;
+
+    return createMaterial(this.texture, {
+      ...(options ?? {}),
+
+      frames: this.frames,
+      gridSize: this.gridSize,
+      alphaMap: this.alphaMap,
+      softParticleDistance: this.softParticleDistance,
+      sceneDepthTexture: WEBGPU_SCENE_DEPTH_TEXTURE,
+    });
+  }
+
+  private isWebGPURenderer(renderer: RendererLike | undefined): boolean {
+    return Boolean(renderer?.isWebGPURenderer);
+  }
+
+  private setActiveRenderer(renderer: RendererLike | undefined): void {
+    const usingWebGPU = this.isWebGPURenderer(renderer);
+    const usingWebGL = renderer && !usingWebGPU;
+
+    this.points.visible = Boolean(usingWebGL);
+    this.points.material = usingWebGL ? this.material : this.hiddenMaterial;
+    this.webgpuMesh.visible = usingWebGPU;
+  }
+
+  private updateWebGPUInstances(
+    particles: Particle[],
+    camera: THREE.Camera | undefined,
+    renderer: RendererLike | undefined,
+  ): void {
+    const count = Math.min(particles.length, this.webgpuCapacity);
+
+    this.webgpuMesh.count = count;
+
+    if (camera) {
+      camera.getWorldQuaternion(this.cameraQuaternion);
+    } else {
+      this.cameraQuaternion.identity();
+    }
+
+    for (let index = 0; index < count; index += 1) {
+      const particle = particles[index];
+
+      this.rollQuaternion.setFromAxisAngle(
+        this.rollAxis,
+        particle.rotation.x,
+      );
+
+      this.quaternion.copy(this.cameraQuaternion).multiply(this.rollQuaternion);
+      this.scaleVector.copy(
+        this.getWebGPUWorldScale(
+          particle,
+          camera,
+          renderer,
+        ),
+      );
+
+      this.matrix.compose(
+        particle.position,
+        this.quaternion,
+        this.scaleVector,
+      );
+
+      this.webgpuMesh.setMatrixAt(index, this.matrix);
+      this.webgpuMesh.setColorAt(index, this.color.copy(particle.color));
+
+      this.webgpuFrameAttribute.setX(index, this.getParticleFrame(particle));
+      this.webgpuAlphaAttribute.setX(index, particle.alpha);
+    }
+
+    this.webgpuMesh.instanceMatrix.needsUpdate = true;
+    if (this.webgpuMesh.instanceColor) this.webgpuMesh.instanceColor.needsUpdate = true;
+    this.webgpuFrameAttribute.needsUpdate = true;
+    this.webgpuAlphaAttribute.needsUpdate = true;
+  }
+
+  private getWebGPUWorldScale(
+    particle: Particle,
+    camera: THREE.Camera | undefined,
+    renderer: RendererLike | undefined,
+  ): THREE.Vector3 {
+    const width = particle.scale.x;
+    const height = particle.scale.y;
+
+    if (!(camera instanceof THREE.PerspectiveCamera)) {
+      this.scaleVector.set(width, height, 1);
+      return this.scaleVector;
+    }
+
+    const drawingBufferHeight =
+      renderer?.getDrawingBufferSize(new THREE.Vector2()).y
+      ?? renderer?.domElement?.height
+      ?? 600;
+    const worldUnitsPerPointSizeUnit =
+      2
+      * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2)
+      * 300
+      / drawingBufferHeight;
+
+    this.scaleVector.set(
+      width * worldUnitsPerPointSizeUnit,
+      height * worldUnitsPerPointSizeUnit,
+      1,
+    );
+
+    return this.scaleVector;
+  }
+
+  private getParticleFrame(particle: Particle): number {
+    return (
+      this.randomStartFrame
+        ? Math.floor(seedrandom(particle.id).quick() * this.frames)
+        : 0
+    ) + (
+      Math.floor(
+        particle.realtime * evaluateDynamicNumber(this.fps, particle.time, particle.id),
+      ) % this.frames
+    );
+  }
+
+  private updateWebGPUEnvironmentMap(environment: THREE.Texture | null): void {
+    if (this.materialType !== SpriteMaterialType.Basic) return;
+
+    const material = this.webgpuMaterial as THREE.MeshStandardMaterial;
+    const nextEnvironment = environment ?? null;
+
+    if (material.envMap === nextEnvironment) return;
+
+    material.envMap = nextEnvironment;
+    material.needsUpdate = true;
+  }
+
+  private updateWebGPUSoftParticles(
+    renderer: WebGPURendererLike | undefined,
+    scene: THREE.Scene | undefined,
+    camera: THREE.Camera | undefined,
+  ): void {
+    if (!this.softParticleDistance) return;
+    if (!renderer || !scene || !camera) return;
+
+    this.getWebGPUSceneDepth(renderer, scene, camera);
   }
 
   private updateEnvironmentMap(
@@ -454,11 +694,98 @@ class SpriteRenderer extends Renderer {
     return data.target.depthTexture ?? undefined;
   }
 
+  private getWebGPUSceneDepth(
+    renderer: WebGPURendererLike,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+  ): THREE.DepthTexture | undefined {
+    let data = scene.userData[WEBGPU_SCENE_DEPTH_DATA_USER_DATA_KEY] as WebGPUSceneDepthData | undefined;
+
+    if (!data) {
+      const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+
+      const target = new THREE.RenderTarget(
+        size.x,
+        size.y,
+        {
+          depthBuffer: true,
+          depthTexture: WEBGPU_SCENE_DEPTH_TEXTURE,
+          samples: 0,
+        },
+      );
+
+      const material = new THREE.MeshBasicMaterial({
+        colorWrite: false,
+        depthTest: true,
+        depthWrite: true,
+      });
+
+      data = {
+        target,
+        material,
+        rendering: false,
+      };
+
+      scene.userData[WEBGPU_SCENE_DEPTH_DATA_USER_DATA_KEY] = data;
+    }
+
+    if (data.rendering) {
+      return data.target.depthTexture ?? undefined;
+    }
+
+    data.rendering = true;
+
+    const size = renderer.getDrawingBufferSize(
+      new THREE.Vector2(),
+    );
+
+    if (
+      data.target.width !== size.x
+      || data.target.height !== size.y
+    ) {
+      data.target.setSize(
+        size.x,
+        size.y,
+      );
+    }
+
+    const previousTarget = renderer.getRenderTarget();
+    const previousOverrideMaterial = scene.overrideMaterial;
+    const hiddenParticleRenderers = this.hideParticleRenderers(scene);
+
+    try {
+      scene.overrideMaterial = data.material;
+
+      renderer.setRenderTarget(data.target);
+      renderer.clear();
+      renderer.render(scene, camera);
+    } finally {
+      renderer.setRenderTarget(previousTarget);
+      scene.overrideMaterial = previousOverrideMaterial;
+      this.restoreParticleRenderers(hiddenParticleRenderers);
+      data.rendering = false;
+    }
+
+    return data.target.depthTexture ?? undefined;
+  }
+
   private hideSpriteRenderers(scene: THREE.Scene): HiddenSpriteRenderer[] {
+    return this.hideParticleRenderers(scene, false);
+  }
+
+  private hideParticleRenderers(
+    scene: THREE.Scene,
+    includeTrails: boolean = true,
+  ): HiddenSpriteRenderer[] {
     const hidden: HiddenSpriteRenderer[] = [];
 
     scene.traverse((object) => {
-      if (!object.userData[SPRITE_RENDERER_USER_DATA_KEY]) return;
+      const isSpriteRenderer =
+        object.userData[SPRITE_RENDERER_USER_DATA_KEY];
+      const isTrailRenderer =
+        includeTrails && object.userData[TRAIL_RENDERER_USER_DATA_KEY];
+
+      if (!isSpriteRenderer && !isTrailRenderer) return;
 
       hidden.push({
         object,
@@ -472,6 +799,10 @@ class SpriteRenderer extends Renderer {
   }
 
   private restoreSpriteRenderers(hidden: HiddenSpriteRenderer[]): void {
+    this.restoreParticleRenderers(hidden);
+  }
+
+  private restoreParticleRenderers(hidden: HiddenSpriteRenderer[]): void {
     hidden.forEach(({ object, visible }) => {
       object.visible = visible;
     });

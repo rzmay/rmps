@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { attribute } from 'three/src/nodes/core/AttributeNode.js';
 import Renderer, { RendererOptions } from '../Renderer';
 import ParticleSystem from '../ParticleSystem';
 import Particle from '../Particle';
@@ -46,6 +47,7 @@ class MeshRenderer extends Renderer {
       this.instances = new THREE.InstancedMesh(this.mesh.geometry, this.mesh.material, options.maxParticles ?? 10000);
       this.instances.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       this.instances.frustumCulled = false;
+      this.instances.setColorAt(0, new THREE.Color(1, 1, 1));
 
       this.castShadow = options.castShadow ?? this.castShadow;
       this.receiveShadow = options.receiveShadow ?? this.receiveShadow;
@@ -104,6 +106,8 @@ class MeshRenderer extends Renderer {
       if (Array.isArray(material)) return material.forEach((mat) => this.preprocessMaterial(mat));
 
       material.transparent = true;
+      (material as THREE.Material & { opacityNode?: unknown }).opacityNode =
+        attribute('instanceAlpha', 'float');
       material.onBeforeCompile = (shader) => {
         shader.vertexShader = `
 attribute float instanceAlpha;
