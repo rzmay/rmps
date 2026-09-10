@@ -25,7 +25,7 @@ class TransformByNoise extends Module {
 
       super((particle: Particle, deltaTime: number) => {
         const scrollSpeed = evaluateDynamicNumber(this.options.scrollSpeed ?? 0, particle.time, particle.id);
-        const time = particle.realtime * scrollSpeed;
+        const time = (particle.realtime / 1000) * scrollSpeed;
 
         this.noiseX.time = time;
         this.noiseY.time = time;

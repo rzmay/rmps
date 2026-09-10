@@ -45,6 +45,7 @@ interface SubSystemEmissionRun {
   id: string;
   transform: THREE.Matrix4;
   startTime: number;
+  realtime: number;
   duration?: number;
   particle: Omit<ParticleOptions, 'tags'> & { tags?: Tag[] };
 }
@@ -233,8 +234,8 @@ class ParticleSystem extends THREE.Object3D {
       );
 
       // Update time
-      p.realtime = (Date.now() - p.startTime) / 1000;
-      p.time = p.realtime / p.lifetime;
+      p.realtime = (Date.now() - p.startTime);
+      p.time = (p.realtime / 1000) / p.lifetime;
 
       // Update transform
       p.position.addScaledVector(p.velocity, this.deltaTime * p.speed);
@@ -306,6 +307,8 @@ class ParticleSystem extends THREE.Object3D {
     for (let i = this._emissionRuns.length - 1; i >= 0; i -= 1) {
       const run = this._emissionRuns[i];
 
+      run.realtime = (Date.now() - run.startTime) / 1000;
+
       let finished = true;
 
       this.emitters.forEach((emitter) => {
@@ -363,6 +366,7 @@ class ParticleSystem extends THREE.Object3D {
       id: `event_${this._nextEmissionRunId++}`,
       transform: this._particleEmissionTransform(particle),
       startTime: now,
+      realtime: 0,
 
       // If lifetime is inherited, use the parent's lifetime instead
       // of the subsystem emitter's configured duration.
@@ -440,6 +444,16 @@ class ParticleSystem extends THREE.Object3D {
 
     this._paused = false;
     this.lastFrame = Date.now();
+
+    const now = Date.now();
+
+    this.particles.forEach((p) => {
+      p.startTime = now - p.realtime;
+    })
+
+    this._emissionRuns.forEach((e) => {
+      e.startTime = now - e.realtime;
+    })
 
     this.subSystems.forEach((_options, subSystem) => {
       subSystem.resume();

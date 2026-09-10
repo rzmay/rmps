@@ -463,7 +463,7 @@ class SpriteRenderer extends Renderer {
         : 0
     ) + (
       Math.floor(
-        particle.realtime * evaluateDynamicNumber(this.fps, particle.time, particle.id),
+        (particle.realtime / 1000) * evaluateDynamicNumber(this.fps, particle.time, particle.id),
       ) % this.frames
     );
   }

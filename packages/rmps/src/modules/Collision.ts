@@ -243,7 +243,7 @@ class Collision extends Module {
 
     particle.lifetime -= particle.start.lifetime * loss;
 
-    if (particle.lifetime <= particle.realtime) {
+    if (particle.lifetime <= (particle.realtime / 1000)) {
       this.killParticle(particle);
     }
   }
