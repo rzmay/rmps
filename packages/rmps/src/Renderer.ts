@@ -19,10 +19,22 @@ export default abstract class Renderer {
     // Runs once, when the renderer is added to the system
     public abstract setup(system: ParticleSystem): void;
 
-    protected abstract _update(particles: Particle[], system: ParticleSystem): void;
-    public update(particles: Particle[], system: ParticleSystem): void {
+    protected abstract _update(
+        particles: Particle[],
+        system: ParticleSystem,
+        deltaTime: number,
+    ): void;
+    public update(
+        particles: Particle[],
+        system: ParticleSystem,
+        deltaTime: number = 0,
+    ): void {
         // Call update on particles in the group
-        this._update(particles.filter((p) => !this.tags || tagsIntersect(this.tags, p.tags ?? [])), system);
+        this._update(
+            particles.filter((p) => !this.tags || tagsIntersect(this.tags, p.tags ?? [])),
+            system,
+            deltaTime,
+        );
     }
 
     // Cleanup

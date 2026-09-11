@@ -29,17 +29,18 @@ export default function createSimulationSpace(scene) {
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
 
-  const path = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(
-      Array.from({ length: 96 }, (_, index) => {
-        const angle = (index / 96) * Math.PI * 2;
-        return new THREE.Vector3(
-          Math.cos(angle) * RING_SIZE.x,
-          0.04,
-          Math.sin(angle) * RING_SIZE.z,
-        );
-      }),
-    ),
+  const pathPoints = Array.from({ length: 96 }, (_, index) => {
+    const angle = (index / 96) * Math.PI * 2;
+    return new THREE.Vector3(
+      Math.cos(angle) * RING_SIZE.x,
+      0.04,
+      Math.sin(angle) * RING_SIZE.z,
+    );
+  });
+  pathPoints.push(pathPoints[0].clone());
+
+  const path = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(pathPoints),
     new THREE.LineBasicMaterial({ color: 0x8fd6ff }),
   );
 

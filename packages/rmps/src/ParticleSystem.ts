@@ -171,11 +171,13 @@ class ParticleSystem extends THREE.Object3D {
     // Subsystems are owned and ticked by parent, avoid double update
     if (this._subSystemParent) return;
 
+    // Tick delta time before checking for pause so that it stays consistent betwee frames, not between processed frames
+    this._calculateDeltaTime();
+
     // Check for pauses
     if (this._paused) return;
 
     this.syncRendererParents();
-    this._calculateDeltaTime();
 
     if (this._playing) this._updateSystemTime();
 
@@ -220,7 +222,7 @@ class ParticleSystem extends THREE.Object3D {
       .forEach((module) => module.modify(this.particles, this.deltaTime));
 
     this.renderers.forEach((renderer) => {
-      renderer.update(this.particles, this);
+      renderer.update(this.particles, this, this.deltaTime);
     });
   }
 

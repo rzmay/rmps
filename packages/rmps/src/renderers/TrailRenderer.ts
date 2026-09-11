@@ -109,6 +109,8 @@ class TrailRenderer extends Renderer {
   private trails: Map<string, ParticleTrail> =
     new Map();
 
+  private elapsedTime = 0;
+
   constructor(
     options: Partial<TrailRendererOptions> = {},
   ) {
@@ -168,8 +170,9 @@ class TrailRenderer extends Renderer {
     };
   }
 
-  _update(particles: Particle[], system: ParticleSystem): void {
+  _update(particles: Particle[], system: ParticleSystem, deltaTime: number): void {
     this.particles = particles;
+    this.elapsedTime += Math.max(0, deltaTime);
 
     this.mesh.castShadow = this.castShadow;
     this.mesh.receiveShadow = this.receiveShadow;
@@ -194,7 +197,7 @@ class TrailRenderer extends Renderer {
   }
 
   private updateParticleTrails(particles: Particle[]): void {
-    const now = Date.now() / 1000;
+    const now = this.elapsedTime;
     const aliveParticles = new Set<string>();
 
     // Adding new trail points
