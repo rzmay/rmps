@@ -44,7 +44,12 @@ class Collision extends Module {
     super((particle) => this.collide(particle), { ...options, priority: 1 });
 
     // Priority < 0, cache position before movement
-    this.dependents = [new Module((particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone(), { ...options, priority: -1 })];
+    this.dependents = [
+      new Module(
+        (particle) => particle.data["__rmps_collision_prevPosition"] = particle.position.clone(),
+        { ...options, priority: -1 }
+      )
+    ];
 
     this.dampen = options.dampen ?? this.dampen;
     this.bounce = options.bounce ?? this.bounce;
