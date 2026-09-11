@@ -19,6 +19,7 @@ interface ParticleSystemOptions {
   emitters: Multiple<Emitter>;
   renderers: Multiple<Renderer>;
   modules: Multiple<Module>;
+  simulationSpeed: number;
   duration: number;
   looping: boolean;
   endBehavior: EndBehavior | `${EndBehavior}`;
@@ -69,6 +70,7 @@ class ParticleSystem extends THREE.Object3D {
 
   gravity: THREE.Vector3;
   gravityModifier: DynamicValue<number>;
+  simulationSpeed: number;
   duration: number;
   looping: boolean;
   endBehavior: EndBehavior;
@@ -126,6 +128,7 @@ class ParticleSystem extends THREE.Object3D {
     this.emitters = acceptMultiple(options.emitters ?? new Emitter()) ?? [];
     this.renderers = acceptMultiple(options.renderers ?? new SpriteRenderer()) ?? [];
     this.modules = acceptMultiple(options.modules) ?? [];
+    this.simulationSpeed = options.simulationSpeed ?? 1;
     this.duration = options.duration ?? 10;
     this.looping = options.looping ?? true;
     this.endBehavior = (options.endBehavior as EndBehavior) ?? EndBehavior.None;
@@ -195,8 +198,18 @@ class ParticleSystem extends THREE.Object3D {
   }
 
   private _calculateDeltaTime() {
-    this.deltaTime = (Date.now() - this.lastFrame) / 1000;
-    this.lastFrame = (Date.now());
+    const now = Date.now();
+
+    this.deltaTime = this._scaleDeltaTime((now - this.lastFrame) / 1000);
+    this.lastFrame = now;
+  }
+
+  private _scaleDeltaTime(deltaTime: number): number {
+    const speed = Number.isFinite(this.simulationSpeed)
+      ? Math.max(0, this.simulationSpeed)
+      : 1;
+
+    return deltaTime * speed;
   }
 
   private _processParticles() {
@@ -236,7 +249,7 @@ class ParticleSystem extends THREE.Object3D {
       );
 
       // Update time
-      p.realtime = (Date.now() - p.startTime);
+      p.realtime += this.deltaTime * 1000;
       p.time = (p.realtime / 1000) / p.lifetime;
 
       // Update transform
@@ -250,7 +263,7 @@ class ParticleSystem extends THREE.Object3D {
       p.scalarVelocity.addScaledVector(p.scalarAcceleration, this.deltaTime * p.speed);
 
       // Kill old particles
-      if (Date.now() - p.startTime > p.lifetime * 1000) {
+      if (p.realtime > p.lifetime * 1000) {
         this._notifyDeath(p);
         this.particles.splice(index, 1);
 
@@ -263,15 +276,19 @@ class ParticleSystem extends THREE.Object3D {
 
   private _updateSubSystems() {
     this.subSystems.forEach((options, subSystem) => {
-      subSystem._updateAsSubSystem(this.particles, options);
+      subSystem._updateAsSubSystem(this.particles, options, this.deltaTime);
     });
   }
 
-  private _updateAsSubSystem(parentParticles: Particle[], options: SubSystemOptions): void {
+  private _updateAsSubSystem(
+    parentParticles: Particle[],
+    options: SubSystemOptions,
+    parentDeltaTime: number,
+  ): void {
     if (!this._playing || this._paused) return;
 
     this.syncRendererParents();
-    this._calculateDeltaTime();
+    this.deltaTime = this._scaleDeltaTime(parentDeltaTime);
     this._updateSystemTime();
 
     if (options.emitContinuous) {
@@ -304,19 +321,17 @@ class ParticleSystem extends THREE.Object3D {
   }
 
   private _updateEmissionRuns(options: SubSystemOptions): void {
-    const now = Date.now();
-
     for (let i = this._emissionRuns.length - 1; i >= 0; i -= 1) {
       const run = this._emissionRuns[i];
 
-      run.realtime = (Date.now() - run.startTime) / 1000;
+      run.realtime += this.deltaTime;
 
       let finished = true;
 
       this.emitters.forEach((emitter) => {
         const duration = run.duration ?? this.duration;
 
-        const elapsed = (now - run.startTime) / 1000;
+        const elapsed = run.realtime;
         const startTime = 0;
         const time = startTime + (elapsed / duration);
 
@@ -454,7 +469,7 @@ class ParticleSystem extends THREE.Object3D {
     })
 
     this._emissionRuns.forEach((e) => {
-      e.startTime = now - e.realtime;
+      e.startTime = now - e.realtime * 1000;
     })
 
     this.subSystems.forEach((_options, subSystem) => {

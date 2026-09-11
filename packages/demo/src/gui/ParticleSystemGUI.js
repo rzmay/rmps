@@ -219,6 +219,7 @@ export class ParticleSystemGUI {
         folder.add(system, 'simulationSpace', ['local', 'world']).name('Simulation Space');
         this.addVector3(folder, system.gravity, 'Gravity');
         this.addDynamicValue(folder, system, 'gravityModifier', 'Gravity Modifier');
+        folder.add(system, 'simulationSpeed', 0, 4, 0.01).name('Simulation Speed');
         folder.add(system, 'duration', 0.01).name('Duration');
         folder.add(system, 'looping').name('Looping');
         folder.add(system, 'endBehavior', END_BEHAVIOR_OPTIONS).name('End Behavior');
@@ -1037,6 +1038,7 @@ export class ParticleSystemGUI {
             `  gravity: ${this.serializeValue(system.gravity)},`,
             `  gravityModifier: ${this.serializeValue(system.gravityModifier)},`,
             `  simulationSpace: ${JSON.stringify(system.simulationSpace)},`,
+            `  simulationSpeed: ${this.serializeValue(system.simulationSpeed)},`,
             `  duration: ${this.serializeValue(system.duration)},`,
             `  looping: ${this.serializeValue(system.looping)},`,
             `  endBehavior: ${this.serializeEndBehavior(system.endBehavior)},`,
